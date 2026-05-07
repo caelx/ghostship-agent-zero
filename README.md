@@ -41,6 +41,6 @@ The Agent Zero UI is exposed at `http://localhost:50080`.
 
 GitHub Actions is the primary build and test environment.
 
-- Branch and pull request builds run unit tests, build `linux/amd64`, and run image tests.
+- Pull requests run unit tests, build `linux/amd64`, and run image tests.
 - `main` builds publish `linux/amd64` and `linux/arm64` images to GHCR as `latest` and the commit SHA.
 - Feature branches should pass CI before merging to `main`.
