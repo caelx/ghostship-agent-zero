@@ -66,6 +66,7 @@ class RepoContractTests(unittest.TestCase):
         self.assertIn("cache-to: type=gha,scope=agent-zero-amd64,mode=max", workflow)
         self.assertIn("cache_scope: agent-zero-arm64", workflow)
         self.assertIn("ghcr.io/${{ github.repository }}", workflow)
+        self.assertIn("Free runner disk space", workflow)
 
     def test_docker_context_ignores_non_build_inputs(self) -> None:
         dockerignore = (ROOT / ".dockerignore").read_text(encoding="utf-8")
