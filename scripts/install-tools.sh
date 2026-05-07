@@ -104,6 +104,7 @@ install_github_tools() {
 
 install_nix() {
   if ! command -v nix >/dev/null 2>&1; then
+    export NIX_CONFIG="filter-syscalls = false"
     curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix \
       | sh -s -- install linux --no-confirm --init none
   fi
@@ -111,6 +112,7 @@ install_nix() {
   mkdir -p /etc/nix
   cat >/etc/nix/nix.conf <<'EOF'
 experimental-features = nix-command flakes
+filter-syscalls = false
 EOF
 }
 

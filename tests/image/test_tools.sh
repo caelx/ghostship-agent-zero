@@ -57,7 +57,7 @@ check tmux tmux -V
 check pre-commit pre-commit --version
 check gitleaks gitleaks version
 check trufflehog trufflehog --version
-check_bash git-secrets 'git secrets --version || git-secrets --version'
+check_bash git-secrets 'command -v git-secrets >/dev/null && git secrets --list --global >/dev/null'
 check git-filter-repo git-filter-repo --version
 
 check shellcheck shellcheck --version
