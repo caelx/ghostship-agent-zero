@@ -5,9 +5,11 @@ source "$(dirname "$0")/lib.sh"
 
 echo "checking CloakBrowser install"
 run_bash_in_image '. /ins/setup_venv.sh local && python -m cloakbrowser info'
+
 echo "checking patched CloakBrowser runtime and uBOL"
-run_xvfb_bash_in_image '. /ins/setup_venv.sh local && PYTHONPATH=/git/agent-zero python - <<'"'"'PY'"'"'
+run_bash_in_image '. /ins/setup_venv.sh local && PYTHONPATH=/git/agent-zero python - <<'"'"'PY'"'"'
 import asyncio
+import inspect
 from pathlib import Path
 
 from plugins._browser.helpers import runtime
@@ -19,6 +21,18 @@ async def smoke() -> None:
         raise AssertionError("uBOL extension manifest is not installed")
     print("uBOL extension files are present", flush=True)
 
+    runtime_source = inspect.getsource(runtime._BrowserRuntimeCore)
+    expected_profile_root = "/root/.cache/ghostship-agent-zero/browser/profiles"
+    if expected_profile_root not in runtime_source:
+        raise AssertionError("browser profiles are not patched to persist under /root")
+    for expected_arg in (
+        "--disable-extensions-except=/usr/local/share/ublock-origin-lite",
+        "--load-extension=/usr/local/share/ublock-origin-lite",
+    ):
+        if expected_arg not in runtime_source:
+            raise AssertionError(f"missing uBOL launch arg: {expected_arg}")
+    print("patched runtime source contains profile and uBOL launch args", flush=True)
+
     runtime.get_browser_config = lambda: {
         "extension_paths": [],
         "default_homepage": "about:blank",
@@ -27,6 +41,9 @@ async def smoke() -> None:
     }
 
     core = runtime._BrowserRuntimeCore("ghostship-cloakbrowser-test")
+    if not str(core.profile_dir).startswith(expected_profile_root):
+        raise AssertionError(f"profile dir is not under /root cache: {core.profile_dir}")
+
     try:
         print("opening patched browser runtime", flush=True)
         await core.open("data:text/html,<title>ghostship cloakbrowser</title>")
@@ -38,15 +55,6 @@ async def smoke() -> None:
         if getattr(page, "_human_cfg", None) is None:
             raise AssertionError("CloakBrowser humanize did not initialize _human_cfg")
         print("CloakBrowser humanize is initialized", flush=True)
-
-        service_workers = page.context.service_workers
-        if service_workers:
-            service_worker = service_workers[0]
-        else:
-            service_worker = await page.context.wait_for_event("serviceworker", timeout=10000)
-        if not service_worker.url.startswith("chrome-extension://"):
-            raise AssertionError(f"uBOL service worker is not loaded: {service_worker.url}")
-        print(f"uBOL service worker is loaded: {service_worker.url}", flush=True)
 
         blocked = []
         failed = []
@@ -76,7 +84,7 @@ async def smoke() -> None:
         await page.wait_for_timeout(2000)
         if not blocked:
             raise AssertionError(
-                f"uBOL did not block the ad probe; service_worker={service_worker.url}; failed={failed}; finished={finished}"
+                f"uBOL did not block the ad probe; failed={failed}; finished={finished}"
             )
         print(f"uBOL blocked ad probe: {blocked[0]}", flush=True)
     finally:

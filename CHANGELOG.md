@@ -8,6 +8,8 @@
 - Added GitHub Actions image build, unit test, image test, and multi-arch GHCR publish workflow.
 - Limited feature validation to pull request events and added workflow concurrency to avoid duplicate branch Docker builds.
 - Added latest uBlock Origin Lite install with complete filtering defaults.
-- Added Xvfb-backed headed browser runtime so uBlock Origin Lite can load and block requests.
 - Simplified CI to image build/tests only and removed repo-contract fixture tests.
 - Added user-facing Bitwarden environment variables for `BW_CLIENTID`, `BW_CLIENTSECRET`, and `BW_PASSWORD`.
+- Switched browser runtime back to headless CloakBrowser, loading uBlock Origin Lite with extension allow/load flags and validating request blocking.
+- Added the final global agent tool baseline, including Nix, git security tools, and repo hygiene tools.
+- Simplified persistence to named `/a0/usr` and `/root` volumes.

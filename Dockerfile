@@ -6,8 +6,9 @@ ARG GHOSTSHIP_CACHE_BUST=local
 
 ENV CLOAKBROWSER_CACHE_DIR=/opt/cloakbrowser \
     CLOAKBROWSER_AUTO_UPDATE=false \
-    BITWARDENCLI_APPDATA_DIR=/a0/usr/bitwarden-cli \
-    DISPLAY=:99
+    GH_PROMPT_DISABLED=1
+
+ENV PATH=/nix/var/nix/profiles/default/bin:$PATH
 
 COPY scripts/ /tmp/ghostship/
 
@@ -26,6 +27,12 @@ RUN --mount=type=cache,target=/root/.cache/uv \
     test -n "$GHOSTSHIP_CACHE_BUST" \
     && /tmp/ghostship/install-tools.sh uv
 
+RUN test -n "$GHOSTSHIP_CACHE_BUST" \
+    && /tmp/ghostship/install-tools.sh github
+
+RUN test -n "$GHOSTSHIP_CACHE_BUST" \
+    && /tmp/ghostship/install-tools.sh nix
+
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,target=/var/lib/apt/lists,sharing=locked \
     --mount=type=cache,target=/root/.cache/uv \
@@ -43,5 +50,3 @@ RUN /tmp/ghostship/patch-browser-runtime.py /git/agent-zero/plugins/_browser/hel
       /tmp/ghostship \
       /a0/usr/plugins/_browser/playwright \
       /git/agent-zero/usr/plugins/_browser/playwright
-
-COPY docker/supervisor/ghostship-xvfb.conf /etc/supervisor/conf.d/ghostship-xvfb.conf

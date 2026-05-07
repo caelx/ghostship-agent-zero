@@ -9,13 +9,11 @@ if [ -z "$image" ]; then
 fi
 
 run_in_image() {
-  timeout 120s docker run --rm "$image" "$@"
+  local entrypoint="$1"
+  shift
+  timeout 120s docker run --rm --entrypoint "$entrypoint" "$image" "$@"
 }
 
 run_bash_in_image() {
-  timeout 120s docker run --rm "$image" bash -lc "$1"
-}
-
-run_xvfb_bash_in_image() {
-  timeout 180s docker run --rm "$image" xvfb-run -a -s "-screen 0 1920x1080x24" bash -lc "$1"
+  timeout 120s docker run --rm --entrypoint bash "$image" -lc "$1"
 }
