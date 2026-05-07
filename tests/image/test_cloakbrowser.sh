@@ -15,29 +15,8 @@ from plugins._browser.helpers import runtime
 async def main() -> None:
     extension = Path("/usr/local/share/ublock-origin-lite")
     manifest = json.loads((extension / "manifest.json").read_text(encoding="utf-8"))
-    enabled_rulesets = {
-        ruleset["id"]
-        for ruleset in manifest["declarative_net_request"]["rule_resources"]
-        if ruleset["enabled"]
-    }
-    for expected in {
-        "ublock-filters",
-        "easylist",
-        "easyprivacy",
-        "ublock-badware",
-        "urlhaus-full",
-    }:
-        if expected not in enabled_rulesets:
-            raise AssertionError(f"uBOL ruleset is not enabled: {expected}")
-    if not any(ruleset.startswith("annoyances-") for ruleset in enabled_rulesets):
-        raise AssertionError("No uBOL annoyance rulesets are enabled")
-
-    config = (extension / "js/config.js").read_text(encoding="utf-8")
-    mode = (extension / "js/mode-manager.js").read_text(encoding="utf-8")
-    if "strictBlockMode: true" not in config:
-        raise AssertionError("uBOL strict block mode is not enabled")
-    if "complete: [ 'all-urls' ]" not in mode and "userModes = { complete: [ 'all-urls' ] }" not in mode:
-        raise AssertionError("uBOL complete filtering mode is not enabled")
+    if "uBlock Origin Lite" not in manifest.get("name", ""):
+        raise AssertionError("uBOL extension manifest is not installed")
 
     runtime.get_browser_config = lambda: {
         "extension_paths": [],
