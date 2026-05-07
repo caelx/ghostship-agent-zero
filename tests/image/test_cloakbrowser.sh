@@ -32,8 +32,17 @@ async def main() -> None:
         if getattr(page, "_human_cfg", None) is None:
             raise AssertionError("CloakBrowser humanize did not initialize _human_cfg")
 
+        service_workers = page.context.service_workers
+        if service_workers:
+            service_worker = service_workers[0]
+        else:
+            service_worker = await page.context.wait_for_event("serviceworker", timeout=10000)
+        if not service_worker.url.startswith("chrome-extension://"):
+            raise AssertionError(f"uBOL service worker is not loaded: {service_worker.url}")
+
         blocked = []
         failed = []
+        finished = []
 
         def on_request_failed(request):
             failure = request.failure or ""
@@ -42,6 +51,8 @@ async def main() -> None:
                 blocked.append(request.url)
 
         page.on("requestfailed", on_request_failed)
+        page.on("requestfinished", lambda request: finished.append(request.url))
+        await page.goto("https://example.com", wait_until="domcontentloaded")
         await page.evaluate(
             """url => new Promise(resolve => {
                 const script = document.createElement("script");
@@ -55,7 +66,9 @@ async def main() -> None:
         )
         await page.wait_for_timeout(2000)
         if not blocked:
-            raise AssertionError(f"uBOL did not block the ad probe; failed={failed}")
+            raise AssertionError(
+                f"uBOL did not block the ad probe; service_worker={service_worker.url}; failed={failed}; finished={finished}"
+            )
     finally:
         await core.close(delete_profile=True)
 
