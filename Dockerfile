@@ -24,9 +24,10 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,target=/root/.cache/uv \
     /tmp/ghostship/install-playwright-cloakbrowser.sh
 
-RUN /tmp/ghostship/patch-browser-runtime.py \
-      /a0/plugins/_browser/helpers/runtime.py \
-      /git/agent-zero/plugins/_browser/helpers/runtime.py \
+RUN /tmp/ghostship/patch-browser-runtime.py /git/agent-zero/plugins/_browser/helpers/runtime.py \
+    && if [ -f /a0/plugins/_browser/helpers/runtime.py ]; then \
+      /tmp/ghostship/patch-browser-runtime.py /a0/plugins/_browser/helpers/runtime.py; \
+    fi \
     && rm -rf \
       /tmp/ghostship \
       /a0/usr/plugins/_browser/playwright \

@@ -17,6 +17,7 @@ class RepoContractTests(unittest.TestCase):
         self.assertIn("COPY scripts/ /tmp/ghostship/", dockerfile)
         self.assertIn("rm -rf", dockerfile)
         self.assertIn("/tmp/ghostship", dockerfile)
+        self.assertIn("/git/agent-zero/plugins/_browser/helpers/runtime.py", dockerfile)
         self.assertNotIn("COPY overlay", dockerfile)
         self.assertNotIn("/opt/ghostship", dockerfile)
         self.assertNotIn("/exe/run_A0.sh", dockerfile)
