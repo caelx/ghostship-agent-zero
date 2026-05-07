@@ -1,7 +1,7 @@
 #!/bin/bash
 set -euo pipefail
 
-. "/ins/setup_venv.sh" "$@"
+. "/ins/setup_venv.sh" local
 
 uv pip install playwright cloakbrowser
 

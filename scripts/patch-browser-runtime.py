@@ -7,18 +7,13 @@ from pathlib import Path
 
 MARKER = "# Ghostship CloakBrowser humanize patch"
 
+OLD_IMPORT = (
+    "from plugins._browser.helpers.playwright import "
+    "configure_playwright_env, ensure_playwright_binary"
+)
+NEW_IMPORT = "from plugins._browser.helpers.playwright import configure_playwright_env"
 
-def patch_runtime(path: Path) -> bool:
-    source = path.read_text(encoding="utf-8")
-    if MARKER in source:
-        return False
-
-    source = source.replace(
-        "from plugins._browser.helpers.playwright import configure_playwright_env, ensure_playwright_binary",
-        "from plugins._browser.helpers.playwright import configure_playwright_env",
-    )
-
-    old_start = """    async def _start(self) -> None:
+OLD_START = """    async def _start(self) -> None:
         from playwright.async_api import async_playwright
 
         self.profile_dir.mkdir(parents=True, exist_ok=True)
@@ -60,7 +55,7 @@ def patch_runtime(path: Path) -> bool:
             raise
 """
 
-    new_start = f"""    async def _start(self) -> None:
+NEW_START = f"""    async def _start(self) -> None:
         from cloakbrowser import launch_persistent_context_async
 
         self.profile_dir.mkdir(parents=True, exist_ok=True)
@@ -94,24 +89,32 @@ def patch_runtime(path: Path) -> bool:
             raise
 """
 
-    if old_start not in source:
-        raise RuntimeError(
-            "Could not find the expected Agent Zero browser startup block to patch."
-        )
 
-    path.write_text(source.replace(old_start, new_start), encoding="utf-8")
+def patch_runtime(path: Path) -> bool:
+    source = path.read_text(encoding="utf-8")
+    if MARKER in source:
+        return False
+
+    if OLD_IMPORT not in source:
+        raise RuntimeError(f"Expected Playwright import not found in {path}")
+    if OLD_START not in source:
+        raise RuntimeError(f"Expected browser startup block not found in {path}")
+
+    patched = source.replace(OLD_IMPORT, NEW_IMPORT).replace(OLD_START, NEW_START)
+    path.write_text(patched, encoding="utf-8")
     return True
 
 
 def main() -> int:
-    if len(sys.argv) != 2:
-        print("usage: patch-browser-runtime.py /path/to/runtime.py", file=sys.stderr)
+    if len(sys.argv) < 2:
+        print("usage: patch-browser-runtime.py RUNTIME_PATH [...]", file=sys.stderr)
         return 2
-    path = Path(sys.argv[1])
-    changed = patch_runtime(path)
-    print(
-        f"{'Patched' if changed else 'Already patched'} Agent Zero browser runtime: {path}"
-    )
+
+    for arg in sys.argv[1:]:
+        path = Path(arg)
+        changed = patch_runtime(path)
+        status = "Patched" if changed else "Already patched"
+        print(f"{status} Agent Zero browser runtime: {path}")
     return 0
 
 
