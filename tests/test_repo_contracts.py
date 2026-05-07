@@ -46,7 +46,9 @@ class RepoContractTests(unittest.TestCase):
         )
 
         self.assertIn("uv pip install playwright cloakbrowser", script)
-        self.assertIn("python -m playwright install-deps chromium", script)
+        self.assertIn("apt-get install -y --no-install-recommends", script)
+        self.assertIn("fonts-unifont", script)
+        self.assertIn("libnss3", script)
         self.assertIn("python -m cloakbrowser install", script)
         self.assertNotIn("playwright install chromium", script)
 
