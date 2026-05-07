@@ -36,7 +36,7 @@ async def main() -> None:
     mode = (extension / "js/mode-manager.js").read_text(encoding="utf-8")
     if "strictBlockMode: true" not in config:
         raise AssertionError("uBOL strict block mode is not enabled")
-    if "complete: [ 'all-urls' ]" not in mode:
+    if "complete: [ 'all-urls' ]" not in mode and "userModes = { complete: [ 'all-urls' ] }" not in mode:
         raise AssertionError("uBOL complete filtering mode is not enabled")
 
     runtime.get_browser_config = lambda: {
