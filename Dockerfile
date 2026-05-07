@@ -6,7 +6,8 @@ ARG GHOSTSHIP_CACHE_BUST=local
 
 ENV CLOAKBROWSER_CACHE_DIR=/opt/cloakbrowser \
     CLOAKBROWSER_AUTO_UPDATE=false \
-    BITWARDENCLI_APPDATA_DIR=/a0/usr/bitwarden-cli
+    BITWARDENCLI_APPDATA_DIR=/a0/usr/bitwarden-cli \
+    DISPLAY=:99
 
 COPY scripts/ /tmp/ghostship/
 
@@ -42,3 +43,5 @@ RUN /tmp/ghostship/patch-browser-runtime.py /git/agent-zero/plugins/_browser/hel
       /tmp/ghostship \
       /a0/usr/plugins/_browser/playwright \
       /git/agent-zero/usr/plugins/_browser/playwright
+
+COPY docker/supervisor/ghostship-xvfb.conf /etc/supervisor/conf.d/ghostship-xvfb.conf

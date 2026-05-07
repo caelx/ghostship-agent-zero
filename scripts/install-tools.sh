@@ -22,6 +22,8 @@ install_apt_tools() {
     ripgrep \
     tmux \
     wget \
+    xauth \
+    xvfb \
     yq
 
   install -d -m 0755 /etc/apt/keyrings

@@ -15,3 +15,7 @@ run_in_image() {
 run_bash_in_image() {
   docker run --rm "$image" bash -lc "$1"
 }
+
+run_xvfb_bash_in_image() {
+  docker run --rm "$image" xvfb-run -a bash -lc "$1"
+}

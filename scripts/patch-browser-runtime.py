@@ -73,7 +73,7 @@ NEW_START = f"""    async def _start(self) -> None:
         self.playwright = None
         launch_kwargs: dict[str, Any] = {{
             "user_data_dir": str(self.profile_dir),
-            "headless": True,
+            "headless": False,
             "accept_downloads": True,
             "downloads_path": str(self.downloads_dir),
             "viewport": DEFAULT_VIEWPORT,

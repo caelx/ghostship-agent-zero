@@ -7,7 +7,7 @@ Thin Docker image customization for Agent Zero with Ghostship CLI tooling and Cl
 - Uses `agent0ai/agent-zero:latest` as the baseline.
 - Installs `bw`, `fd`, `gcloud`, `gh`, `git`, `gws`, `jq`, `rg`, `tmux`, `uv`, and `yq`.
 - Installs CloakBrowser and patches Agent Zero's `_browser` runtime at build time to call `launch_persistent_context_async(..., humanize=True)`.
-- Installs the latest uBlock Origin Lite extension and loads it in Agent Zero browser sessions.
+- Installs the latest uBlock Origin Lite extension and loads it in Agent Zero browser sessions under Xvfb so the extension is active.
 - Resolves the latest available package and extension versions during each CI build.
 - Leaves no Ghostship build helper scripts in the final image.
 
