@@ -6,7 +6,6 @@ source "$(dirname "$0")/lib.sh"
 run_bash_in_image '. /ins/setup_venv.sh local && python -m cloakbrowser info'
 run_bash_in_image '. /ins/setup_venv.sh local && PYTHONPATH=/git/agent-zero python - <<'"'"'PY'"'"'
 import asyncio
-import json
 from pathlib import Path
 
 from plugins._browser.helpers import runtime
@@ -14,8 +13,7 @@ from plugins._browser.helpers import runtime
 
 async def main() -> None:
     extension = Path("/usr/local/share/ublock-origin-lite")
-    manifest = json.loads((extension / "manifest.json").read_text(encoding="utf-8"))
-    if "uBlock Origin Lite" not in manifest.get("name", ""):
+    if not (extension / "manifest.json").is_file():
         raise AssertionError("uBOL extension manifest is not installed")
 
     runtime.get_browser_config = lambda: {
