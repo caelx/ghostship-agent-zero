@@ -17,5 +17,5 @@ run_bash_in_image() {
 }
 
 run_xvfb_bash_in_image() {
-  docker run --rm "$image" xvfb-run -a bash -lc "$1"
+  timeout 180s docker run --rm "$image" xvfb-run -a -s "-screen 0 1920x1080x24" bash -lc "$1"
 }
