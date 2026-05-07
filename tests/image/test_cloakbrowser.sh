@@ -70,18 +70,25 @@ async def smoke() -> None:
         page.on("requestfinished", lambda request: finished.append(request.url))
         print("running uBOL ad-block probe", flush=True)
         await page.goto("https://example.com", wait_until="domcontentloaded")
-        await page.evaluate(
-            """url => new Promise(resolve => {
-                const script = document.createElement("script");
-                script.src = `${url}?ghostshipSmoke=${Date.now()}`;
-                script.onload = () => resolve();
-                script.onerror = () => resolve();
-                document.head.appendChild(script);
-                setTimeout(resolve, 6000);
-            })""",
-            "https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js",
-        )
-        await page.wait_for_timeout(2000)
+        for probe_url in (
+            "https://ad.doubleclick.net/ghostship-ad-probe.gif",
+            "https://3lift.com/ghostship-ad-probe.gif",
+            "https://scorecardresearch.com/ghostship-ad-probe.gif",
+        ):
+            await page.evaluate(
+                """url => new Promise(resolve => {
+                    const img = document.createElement("img");
+                    img.src = `${url}?ghostshipSmoke=${Date.now()}`;
+                    img.onload = () => resolve();
+                    img.onerror = () => resolve();
+                    document.body.appendChild(img);
+                    setTimeout(resolve, 4000);
+                })""",
+                probe_url,
+            )
+            if blocked:
+                break
+        await page.wait_for_timeout(1000)
         if not blocked:
             raise AssertionError(
                 f"uBOL did not block the ad probe; failed={failed}; finished={finished}"
