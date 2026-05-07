@@ -3,7 +3,9 @@ set -euo pipefail
 
 source "$(dirname "$0")/lib.sh"
 
+echo "checking CloakBrowser install"
 run_bash_in_image '. /ins/setup_venv.sh local && python -m cloakbrowser info'
+echo "checking patched CloakBrowser runtime and uBOL"
 run_xvfb_bash_in_image '. /ins/setup_venv.sh local && PYTHONPATH=/git/agent-zero python - <<'"'"'PY'"'"'
 import asyncio
 from pathlib import Path

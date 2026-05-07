@@ -9,11 +9,11 @@ if [ -z "$image" ]; then
 fi
 
 run_in_image() {
-  docker run --rm "$image" "$@"
+  timeout 120s docker run --rm "$image" "$@"
 }
 
 run_bash_in_image() {
-  docker run --rm "$image" bash -lc "$1"
+  timeout 120s docker run --rm "$image" bash -lc "$1"
 }
 
 run_xvfb_bash_in_image() {
