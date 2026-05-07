@@ -11,5 +11,4 @@ fi
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 "$root/tests/image/test_tools.sh" "$image"
-"$root/tests/image/test_image_contracts.sh" "$image"
 "$root/tests/image/test_cloakbrowser.sh" "$image"

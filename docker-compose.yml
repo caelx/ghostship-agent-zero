@@ -5,8 +5,9 @@ services:
       context: .
     image: ghostship-agent-zero:local
     environment:
-      CLOAKBROWSER_CACHE_DIR: /opt/cloakbrowser
-      CLOAKBROWSER_AUTO_UPDATE: "false"
+      BW_CLIENTID: ${BW_CLIENTID:-}
+      BW_CLIENTSECRET: ${BW_CLIENTSECRET:-}
+      BW_PASSWORD: ${BW_PASSWORD:-}
     volumes:
       - ./agent-zero:/a0
     ports:

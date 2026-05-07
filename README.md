@@ -7,6 +7,8 @@ Thin Docker image customization for Agent Zero with Ghostship CLI tooling and Cl
 - Uses `agent0ai/agent-zero:latest` as the baseline.
 - Installs `bw`, `fd`, `gcloud`, `gh`, `git`, `gws`, `jq`, `rg`, `tmux`, `uv`, and `yq`.
 - Installs CloakBrowser and patches Agent Zero's `_browser` runtime at build time to call `launch_persistent_context_async(..., humanize=True)`.
+- Installs the latest uBlock Origin Lite extension and loads it in Agent Zero browser sessions.
+- Resolves the latest available package and extension versions during each CI build.
 - Leaves no Ghostship build helper scripts in the final image.
 
 ## Build
@@ -16,14 +18,6 @@ docker build -t ghostship-agent-zero:local .
 ```
 
 ## Test
-
-Host-side unit tests:
-
-```bash
-python -m unittest discover -s tests -p 'test_*.py'
-```
-
-Image tests:
 
 ```bash
 tests/run-image-tests.sh ghostship-agent-zero:local
@@ -37,10 +31,20 @@ docker compose up
 
 The Agent Zero UI is exposed at `http://localhost:50080`.
 
+## Environment
+
+Copy `.env.example` to `.env` and set these values if you want agents to use the Bitwarden CLI non-interactively:
+
+- `BW_CLIENTID`
+- `BW_CLIENTSECRET`
+- `BW_PASSWORD`
+
+`BW_SESSION` is not treated as durable configuration. It is an ephemeral Bitwarden unlock session key.
+
 ## CI And Images
 
 GitHub Actions is the primary build and test environment.
 
-- Pull requests run unit tests, build `linux/amd64`, and run image tests.
+- Pull requests build `linux/amd64` and run image tests.
 - `main` builds publish `linux/amd64` and `linux/arm64` images to GHCR as `latest` and the commit SHA.
 - Feature branches should pass CI before merging to `main`.

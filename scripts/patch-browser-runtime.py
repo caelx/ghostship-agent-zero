@@ -6,6 +6,7 @@ from pathlib import Path
 
 
 MARKER = "# Ghostship CloakBrowser humanize patch"
+UBLOCK_ORIGIN_LITE_DIR = "/usr/local/share/ublock-origin-lite"
 
 OLD_IMPORT = (
     "from plugins._browser.helpers.playwright import "
@@ -64,6 +65,10 @@ NEW_START = f"""    async def _start(self) -> None:
         browser_config = get_browser_config()
         launch_config = build_browser_launch_config(browser_config)
         configure_playwright_env()
+        launch_args = list(launch_config["args"])
+        ubol_arg = "--load-extension={UBLOCK_ORIGIN_LITE_DIR}"
+        if ubol_arg not in launch_args:
+            launch_args.append(ubol_arg)
 
         self.playwright = None
         launch_kwargs: dict[str, Any] = {{
@@ -74,7 +79,7 @@ NEW_START = f"""    async def _start(self) -> None:
             "viewport": DEFAULT_VIEWPORT,
             "screen": DEFAULT_VIEWPORT,
             "no_viewport": False,
-            "args": launch_config["args"],
+            "args": launch_args,
             "humanize": True,
         }}
         if launch_config["channel"]:
