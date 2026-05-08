@@ -6,9 +6,9 @@ Thin Docker image customization for Agent Zero with Ghostship tooling, CloakBrow
 
 - Uses `agent0ai/agent-zero:latest` as the baseline.
 - Installs the global agent tool baseline: `bw`, `gh`, `git`, `openssh-client`, `curl`, `wget`, `ca-certificates`, `jq`, `yq`, `rg`, `fd`, `python3`, `pip`, `uv`, `nodejs`, `npm`, `npx`, `corepack`, `nix`, `make`, `just`, `bash`, `tar`, `gzip`, `xz`, `zstd`, `zip`, `unzip`, `7zip`, `file`, `less`, `tree`, `tmux`, `pre-commit`, `gitleaks`, `trufflehog`, `git-secrets`, `git-filter-repo`, `shellcheck`, `shfmt`, and `actionlint`.
-- Installs CloakBrowser and patches Agent Zero's `_browser` runtime at build time to call `launch_persistent_context_async(..., humanize=True, headless=True)`.
+- Installs CloakBrowser and patches Agent Zero's `_browser` runtime at build time to call `launch_persistent_context_async(..., humanize=True, geoip=True, headless=True)`.
 - Persists CloakBrowser browser profiles under `/root/.cache/ghostship-agent-zero/browser/profiles`.
-- Installs the latest uBlock Origin Lite extension and loads it with `--disable-extensions-except` and `--load-extension`.
+- Stages the latest uBlock Origin Lite extension and lets Agent Zero's Browser extension manager enable it at runtime.
 - Resolves the latest available package and extension versions during each CI build.
 - Leaves no Ghostship build helper scripts in the final image.
 

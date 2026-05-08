@@ -13,3 +13,4 @@
 - Switched browser runtime back to headless CloakBrowser, loading uBlock Origin Lite with extension allow/load flags and validating request blocking.
 - Added the final global agent tool baseline, including Nix, git security tools, and repo hygiene tools.
 - Simplified persistence to named `/a0/usr` and `/root` volumes.
+- Updated the Browser runtime patch to let CloakBrowser own launch defaults, enable GeoIP, and install uBlock Origin Lite through Agent Zero's native extension manager.

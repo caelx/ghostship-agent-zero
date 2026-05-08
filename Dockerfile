@@ -40,7 +40,8 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     && /tmp/ghostship/install-playwright-cloakbrowser.sh
 
 RUN test -n "$GHOSTSHIP_CACHE_BUST" \
-    && /tmp/ghostship/install-ublock-origin-lite.py /usr/local/share/ublock-origin-lite
+    && mkdir -p /opt/ghostship \
+    && /tmp/ghostship/install-ublock-origin-lite.py /opt/ghostship/ublock-origin-lite
 
 RUN /tmp/ghostship/patch-browser-runtime.py /git/agent-zero/plugins/_browser/helpers/runtime.py \
     && if [ -f /a0/plugins/_browser/helpers/runtime.py ]; then \

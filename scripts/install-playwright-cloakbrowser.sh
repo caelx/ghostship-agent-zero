@@ -3,7 +3,7 @@ set -euo pipefail
 
 . "/ins/setup_venv.sh" local
 
-uv pip install playwright cloakbrowser
+uv pip install playwright 'cloakbrowser[geoip]'
 
 export CLOAKBROWSER_CACHE_DIR="${CLOAKBROWSER_CACHE_DIR:-/opt/cloakbrowser}"
 export CLOAKBROWSER_AUTO_UPDATE="${CLOAKBROWSER_AUTO_UPDATE:-false}"
@@ -17,8 +17,13 @@ if apt-cache policy libasound2 | grep -Eq "Candidate: [^(]"; then
 fi
 
 apt-get install -y --no-install-recommends \
+  fonts-freefont-ttf \
+  fonts-ipafont-gothic \
   fonts-unifont \
   fonts-liberation \
+  fonts-noto-color-emoji \
+  fonts-tlwg-loma-otf \
+  fonts-wqy-zenhei \
   libatk-bridge2.0-0 \
   libatk1.0-0 \
   libatspi2.0-0 \
