@@ -14,3 +14,5 @@
 - Added the final global agent tool baseline, including Nix, git security tools, and repo hygiene tools.
 - Simplified persistence to named `/a0/usr` and `/root` volumes.
 - Updated the Browser runtime patch to let CloakBrowser own launch defaults, enable GeoIP, and install uBlock Origin Lite through Agent Zero's native extension manager.
+- Added Bitwarden MCP server installation with default Agent Zero MCP settings seeding.
+- Added "I still don't care about cookies" as a staged CloakBrowser extension through Agent Zero's extension manager.

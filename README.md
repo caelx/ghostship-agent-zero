@@ -5,10 +5,11 @@ Thin Docker image customization for Agent Zero with Ghostship tooling, CloakBrow
 ## What This Image Adds
 
 - Uses `agent0ai/agent-zero:latest` as the baseline.
-- Installs the global agent tool baseline: `bw`, `gh`, `git`, `openssh-client`, `curl`, `wget`, `ca-certificates`, `jq`, `yq`, `rg`, `fd`, `python3`, `pip`, `uv`, `nodejs`, `npm`, `npx`, `corepack`, `nix`, `make`, `just`, `bash`, `tar`, `gzip`, `xz`, `zstd`, `zip`, `unzip`, `7zip`, `file`, `less`, `tree`, `tmux`, `pre-commit`, `gitleaks`, `trufflehog`, `git-secrets`, `git-filter-repo`, `shellcheck`, `shfmt`, and `actionlint`.
+- Installs the global agent tool baseline: `bw`, `mcp-server-bitwarden`, `gh`, `git`, `openssh-client`, `curl`, `wget`, `ca-certificates`, `jq`, `yq`, `rg`, `fd`, `python3`, `pip`, `uv`, `nodejs`, `npm`, `npx`, `corepack`, `nix`, `make`, `just`, `bash`, `tar`, `gzip`, `xz`, `zstd`, `zip`, `unzip`, `7zip`, `file`, `less`, `tree`, `tmux`, `pre-commit`, `gitleaks`, `trufflehog`, `git-secrets`, `git-filter-repo`, `shellcheck`, `shfmt`, and `actionlint`.
+- Seeds Bitwarden MCP into Agent Zero's external MCP server settings.
 - Installs CloakBrowser and patches Agent Zero's `_browser` runtime at build time to call `launch_persistent_context_async(..., humanize=True, geoip=True, headless=True)`.
 - Persists CloakBrowser browser profiles under `/root/.cache/ghostship-agent-zero/browser/profiles`.
-- Stages the latest uBlock Origin Lite extension and lets Agent Zero's Browser extension manager enable it at runtime.
+- Stages the latest uBlock Origin Lite and "I still don't care about cookies" extensions and lets Agent Zero's Browser extension manager enable them at runtime.
 - Resolves the latest available package and extension versions during each CI build.
 - Leaves no Ghostship build helper scripts in the final image.
 
@@ -43,13 +44,13 @@ The Agent Zero UI is exposed at `http://localhost:50080`.
 
 ## Environment
 
-Copy `.env.example` to `.env` and set these values if you want agents to use the Bitwarden CLI non-interactively:
+Copy `.env.example` to `.env` and set these values if you want agents to use Bitwarden non-interactively:
 
-- `BW_CLIENTID`
-- `BW_CLIENTSECRET`
+- `BW_CLIENT_ID`
+- `BW_CLIENT_SECRET`
 - `BW_PASSWORD`
 
-`BW_SESSION` is not treated as durable configuration. It is an ephemeral Bitwarden unlock session key.
+`BW_SESSION` is not treated as durable configuration. It is an ephemeral Bitwarden unlock session key used by the Bitwarden CLI and MCP server.
 
 `GH_PROMPT_DISABLED=1` is baked into the image so GitHub CLI commands avoid interactive prompts.
 
