@@ -51,24 +51,6 @@ TOOLS = (
         patterns=(rf"^actionlint_.*_linux_{ARCH['goarch']}\.tar\.gz$",),
     ),
     Tool(
-        name="gitleaks",
-        repo="gitleaks/gitleaks",
-        binary="gitleaks",
-        patterns=(rf"^gitleaks_.*_linux_({ARCH['aliases']})\.tar\.gz$",),
-    ),
-    Tool(
-        name="just",
-        repo="casey/just",
-        binary="just",
-        patterns=(rf"^just-.*-{ARCH['rust_musl']}\.tar\.gz$",),
-    ),
-    Tool(
-        name="shfmt",
-        repo="mvdan/sh",
-        binary="shfmt",
-        patterns=(rf"^shfmt_.*_linux_{ARCH['goarch']}$",),
-    ),
-    Tool(
         name="trufflehog",
         repo="trufflesecurity/trufflehog",
         binary="trufflehog",
