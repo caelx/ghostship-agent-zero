@@ -5,14 +5,24 @@ import sys
 from pathlib import Path
 
 
-MARKER = "# Ghostship CloakBrowser humanize patch"
-UBLOCK_ORIGIN_LITE_DIR = "/usr/local/share/ublock-origin-lite"
+MARKER = "# Ghostship CloakBrowser native headless patch v2"
+LEGACY_MARKER = "# Ghostship CloakBrowser humanize patch"
+
+OLD_CONFIG_IMPORT = """from plugins._browser.helpers.config import (
+    DEFAULT_HOMEPAGE_KEY,
+    build_browser_launch_config,
+    get_browser_config,
+)"""
+NEW_CONFIG_IMPORT = """from plugins._browser.helpers.config import (
+    DEFAULT_HOMEPAGE_KEY,
+    describe_browser_extensions,
+    get_browser_config,
+)"""
 
 OLD_IMPORT = (
     "from plugins._browser.helpers.playwright import "
     "configure_playwright_env, ensure_playwright_binary"
 )
-NEW_IMPORT = "from plugins._browser.helpers.playwright import configure_playwright_env"
 
 OLD_START = """    async def _start(self) -> None:
         from playwright.async_api import async_playwright
@@ -59,20 +69,64 @@ OLD_START = """    async def _start(self) -> None:
 NEW_START = f"""    async def _start(self) -> None:
         from cloakbrowser import launch_persistent_context_async
 
+        import fcntl
+        import shutil
+        from pathlib import Path
+
+        from plugins._browser.helpers.extension_manager import (
+            get_extensions_root,
+            set_browser_extension_enabled,
+        )
+
+        def ensure_ublock_origin_lite() -> None:
+            source = Path("/opt/ghostship/ublock-origin-lite")
+            if not (source / "manifest.json").is_file():
+                PrintStyle.warning(f"uBlock Origin Lite stage missing: {{source}}")
+                return
+
+            root = get_extensions_root()
+            target = root / "ghostship" / "ublock-origin-lite"
+            lock_path = root / ".ghostship-ubol.lock"
+            root.mkdir(parents=True, exist_ok=True)
+
+            with lock_path.open("w") as lock_file:
+                fcntl.flock(lock_file, fcntl.LOCK_EX)
+
+                if not (target / "manifest.json").is_file():
+                    tmp = target.with_name(f"{{target.name}}.tmp")
+                    if tmp.exists():
+                        shutil.rmtree(tmp)
+                    tmp.parent.mkdir(parents=True, exist_ok=True)
+                    shutil.copytree(source, tmp)
+                    if target.exists():
+                        shutil.rmtree(target)
+                    tmp.rename(target)
+
+                set_browser_extension_enabled(str(target), True)
+
+        def extension_launch_args(browser_config: dict[str, Any]) -> list[str]:
+            extensions = describe_browser_extensions(browser_config)
+
+            if not extensions.get("active"):
+                return []
+
+            joined_paths = ",".join(extensions.get("active_paths") or [])
+            if not joined_paths:
+                return []
+
+            return [
+                f"--disable-extensions-except={{joined_paths}}",
+                f"--load-extension={{joined_paths}}",
+            ]
+
         self.profile_dir.mkdir(parents=True, exist_ok=True)
         self.downloads_dir.mkdir(parents=True, exist_ok=True)
         self._release_orphaned_profile_singleton()
+
+        ensure_ublock_origin_lite()
+
         browser_config = get_browser_config()
-        launch_config = build_browser_launch_config(browser_config)
-        configure_playwright_env()
-        launch_args = list(launch_config["args"])
-        ubol_args = [
-            "--disable-extensions-except={UBLOCK_ORIGIN_LITE_DIR}",
-            "--load-extension={UBLOCK_ORIGIN_LITE_DIR}",
-        ]
-        for ubol_arg in ubol_args:
-            if ubol_arg not in launch_args:
-                launch_args.append(ubol_arg)
+        extension_args = extension_launch_args(browser_config)
 
         self.playwright = None
         launch_kwargs: dict[str, Any] = {{
@@ -81,15 +135,10 @@ NEW_START = f"""    async def _start(self) -> None:
             "accept_downloads": True,
             "downloads_path": str(self.downloads_dir),
             "viewport": DEFAULT_VIEWPORT,
-            "screen": DEFAULT_VIEWPORT,
-            "no_viewport": False,
-            "args": launch_args,
+            "args": extension_args,
             "humanize": True,
+            "geoip": True,
         }}
-        if launch_config["channel"]:
-            PrintStyle.warning(
-                "Ignoring configured browser channel because CloakBrowser supplies the browser binary."
-            )
         try:
             {MARKER}
             self.context = await launch_persistent_context_async(**launch_kwargs)
@@ -129,7 +178,13 @@ def patch_runtime(path: Path) -> bool:
     source = path.read_text(encoding="utf-8")
     if MARKER in source:
         return False
+    if LEGACY_MARKER in source:
+        raise RuntimeError(
+            f"Legacy Ghostship browser patch found in {path}; rebuild from a clean upstream Agent Zero base before applying v2"
+        )
 
+    if OLD_CONFIG_IMPORT not in source:
+        raise RuntimeError(f"Expected Browser config import not found in {path}")
     if OLD_IMPORT not in source:
         raise RuntimeError(f"Expected Playwright import not found in {path}")
     if OLD_START not in source:
@@ -138,7 +193,8 @@ def patch_runtime(path: Path) -> bool:
         raise RuntimeError(f"Expected browser path block not found in {path}")
 
     patched = (
-        source.replace(OLD_IMPORT, NEW_IMPORT)
+        source.replace(OLD_CONFIG_IMPORT, NEW_CONFIG_IMPORT)
+        .replace(OLD_IMPORT + "\n", "")
         .replace(OLD_START, NEW_START)
         .replace(OLD_PATHS, NEW_PATHS)
     )

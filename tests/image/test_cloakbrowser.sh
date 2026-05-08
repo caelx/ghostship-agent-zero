@@ -12,33 +12,50 @@ import asyncio
 import inspect
 from pathlib import Path
 
+from plugins._browser.helpers.config import describe_browser_extensions, get_browser_config
+from plugins._browser.helpers.extension_manager import get_extensions_root
 from plugins._browser.helpers import runtime
 
 
 async def smoke() -> None:
-    extension = Path("/usr/local/share/ublock-origin-lite")
-    if not (extension / "manifest.json").is_file():
-        raise AssertionError("uBOL extension manifest is not installed")
-    print("uBOL extension files are present", flush=True)
+    staged_extension = Path("/opt/ghostship/ublock-origin-lite")
+    if not (staged_extension / "manifest.json").is_file():
+        raise AssertionError("staged uBOL extension manifest is not installed")
+    print("staged uBOL extension files are present", flush=True)
 
-    runtime_source = inspect.getsource(runtime._BrowserRuntimeCore)
+    runtime_source = inspect.getsource(runtime)
+    core_source = inspect.getsource(runtime._BrowserRuntimeCore)
     expected_profile_root = "/root/.cache/ghostship-agent-zero/browser/profiles"
-    if expected_profile_root not in runtime_source:
-        raise AssertionError("browser profiles are not patched to persist under /root")
-    for expected_arg in (
-        "--disable-extensions-except=/usr/local/share/ublock-origin-lite",
-        "--load-extension=/usr/local/share/ublock-origin-lite",
+    for expected in (
+        "# Ghostship CloakBrowser native headless patch v2",
+        "humanize",
+        "geoip",
+        expected_profile_root,
+        "describe_browser_extensions",
+        "set_browser_extension_enabled",
+        "/opt/ghostship/ublock-origin-lite",
     ):
-        if expected_arg not in runtime_source:
-            raise AssertionError(f"missing uBOL launch arg: {expected_arg}")
-    print("patched runtime source contains profile and uBOL launch args", flush=True)
-
-    runtime.get_browser_config = lambda: {
-        "extension_paths": [],
-        "default_homepage": "about:blank",
-        "autofocus_active_page": True,
-        "model_preset": "",
-    }
+        if expected not in runtime_source:
+            raise AssertionError(f"missing patched runtime source marker: {expected}")
+    for forbidden in (
+        "build_browser_launch_config",
+        "configure_playwright_env",
+        "ensure_playwright_binary",
+    ):
+        if forbidden in runtime_source:
+            raise AssertionError(f"forbidden patched runtime source snippet remains: {forbidden}")
+    for forbidden in (
+        "launch_config[\"args\"]",
+        "\"channel\"",
+        "\"executable_path\"",
+        "\"screen\"",
+        "\"no_viewport\"",
+        "--disable-gpu",
+        "--disable-dev-shm-usage",
+    ):
+        if forbidden in core_source:
+            raise AssertionError(f"forbidden patched runtime source snippet remains: {forbidden}")
+    print("patched runtime source is CloakBrowser-native v2", flush=True)
 
     core = runtime._BrowserRuntimeCore("ghostship-cloakbrowser-test")
     if not str(core.profile_dir).startswith(expected_profile_root):
@@ -55,6 +72,14 @@ async def smoke() -> None:
         if getattr(page, "_human_cfg", None) is None:
             raise AssertionError("CloakBrowser humanize did not initialize _human_cfg")
         print("CloakBrowser humanize is initialized", flush=True)
+
+        installed_extension = get_extensions_root() / "ghostship" / "ublock-origin-lite"
+        if not (installed_extension / "manifest.json").is_file():
+            raise AssertionError(f"uBOL was not installed into Browser extension root: {installed_extension}")
+        active_paths = describe_browser_extensions(get_browser_config()).get("active_paths") or []
+        if str(installed_extension) not in active_paths:
+            raise AssertionError(f"uBOL is not enabled through Browser extension manager: {active_paths}")
+        print(f"uBOL is enabled through Browser extension manager: {installed_extension}", flush=True)
 
         blocked = []
         failed = []

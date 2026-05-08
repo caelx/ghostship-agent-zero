@@ -26,6 +26,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Run patch contract tests
+        run: python3 tests/test_browser_runtime_patch.py
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
