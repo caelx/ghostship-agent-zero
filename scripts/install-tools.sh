@@ -30,11 +30,6 @@ EOF
     archive_package="7zip"
   fi
 
-  just_package=()
-  if apt-cache show just >/dev/null 2>&1; then
-    just_package=(just)
-  fi
-
   apt-get install -y --no-install-recommends \
     bash \
     ca-certificates \
@@ -44,8 +39,11 @@ EOF
     gh \
     git \
     git-filter-repo \
+    git-secrets \
+    gitleaks \
     gzip \
     jq \
+    just \
     less \
     make \
     nodejs \
@@ -56,6 +54,7 @@ EOF
     python3-pip \
     ripgrep \
     shellcheck \
+    shfmt \
     tar \
     tmux \
     tree \
@@ -65,8 +64,7 @@ EOF
     yq \
     zip \
     zstd \
-    "$archive_package" \
-    "${just_package[@]}"
+    "$archive_package"
 
   if ! command -v fd >/dev/null 2>&1 && command -v fdfind >/dev/null 2>&1; then
     ln -s /usr/bin/fdfind /usr/local/bin/fd
@@ -94,12 +92,6 @@ install_uv() {
 
 install_github_tools() {
   /tmp/ghostship/install-github-tools.py
-  if ! command -v git-secrets >/dev/null 2>&1; then
-    tmpdir="$(mktemp -d)"
-    git clone --depth 1 https://github.com/awslabs/git-secrets.git "$tmpdir/git-secrets"
-    make -C "$tmpdir/git-secrets" install PREFIX=/usr/local
-    rm -rf "$tmpdir"
-  fi
 }
 
 install_nix() {
