@@ -1,4 +1,13 @@
 .git
+.env
 agent-zero
 *.log
+__pycache__
+*.pyc
 tmp
+.github
+tests
+AGENTS.md
+CHANGELOG.md
+README.md
+docker-compose.yml
