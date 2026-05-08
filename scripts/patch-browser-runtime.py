@@ -78,15 +78,19 @@ NEW_START = f"""    async def _start(self) -> None:
             set_browser_extension_enabled,
         )
 
-        def ensure_ublock_origin_lite() -> None:
-            source = Path("/opt/ghostship/ublock-origin-lite")
+        def ensure_ghostship_browser_extension(
+            source_name: str,
+            target_name: str,
+            label: str,
+        ) -> None:
+            source = Path("/opt/ghostship") / source_name
             if not (source / "manifest.json").is_file():
-                PrintStyle.warning(f"uBlock Origin Lite stage missing: {{source}}")
+                PrintStyle.warning(f"{{label}} stage missing: {{source}}")
                 return
 
             root = get_extensions_root()
-            target = root / "ghostship" / "ublock-origin-lite"
-            lock_path = root / ".ghostship-ubol.lock"
+            target = root / "ghostship" / target_name
+            lock_path = root / ".ghostship-browser-extensions.lock"
             root.mkdir(parents=True, exist_ok=True)
 
             with lock_path.open("w") as lock_file:
@@ -103,6 +107,18 @@ NEW_START = f"""    async def _start(self) -> None:
                     tmp.rename(target)
 
                 set_browser_extension_enabled(str(target), True)
+
+        def ensure_ghostship_browser_extensions() -> None:
+            ensure_ghostship_browser_extension(
+                "ublock-origin-lite",
+                "ublock-origin-lite",
+                "uBlock Origin Lite",
+            )
+            ensure_ghostship_browser_extension(
+                "i-still-dont-care-about-cookies",
+                "i-still-dont-care-about-cookies",
+                "I still don't care about cookies",
+            )
 
         def extension_launch_args(browser_config: dict[str, Any]) -> list[str]:
             extensions = describe_browser_extensions(browser_config)
@@ -123,7 +139,7 @@ NEW_START = f"""    async def _start(self) -> None:
         self.downloads_dir.mkdir(parents=True, exist_ok=True)
         self._release_orphaned_profile_singleton()
 
-        ensure_ublock_origin_lite()
+        ensure_ghostship_browser_extensions()
 
         browser_config = get_browser_config()
         extension_args = extension_launch_args(browser_config)

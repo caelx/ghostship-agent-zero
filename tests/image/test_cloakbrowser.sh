@@ -21,7 +21,10 @@ async def smoke() -> None:
     staged_extension = Path("/opt/ghostship/ublock-origin-lite")
     if not (staged_extension / "manifest.json").is_file():
         raise AssertionError("staged uBOL extension manifest is not installed")
-    print("staged uBOL extension files are present", flush=True)
+    staged_cookie_extension = Path("/opt/ghostship/i-still-dont-care-about-cookies")
+    if not (staged_cookie_extension / "manifest.json").is_file():
+        raise AssertionError("staged cookie extension manifest is not installed")
+    print("staged Browser extension files are present", flush=True)
 
     runtime_source = inspect.getsource(runtime)
     core_source = inspect.getsource(runtime._BrowserRuntimeCore)
@@ -33,7 +36,9 @@ async def smoke() -> None:
         expected_profile_root,
         "describe_browser_extensions",
         "set_browser_extension_enabled",
-        "/opt/ghostship/ublock-origin-lite",
+        "/opt/ghostship",
+        "ublock-origin-lite",
+        "i-still-dont-care-about-cookies",
     ):
         if expected not in runtime_source:
             raise AssertionError(f"missing patched runtime source marker: {expected}")
@@ -76,10 +81,14 @@ async def smoke() -> None:
         installed_extension = get_extensions_root() / "ghostship" / "ublock-origin-lite"
         if not (installed_extension / "manifest.json").is_file():
             raise AssertionError(f"uBOL was not installed into Browser extension root: {installed_extension}")
+        installed_cookie_extension = get_extensions_root() / "ghostship" / "i-still-dont-care-about-cookies"
+        if not (installed_cookie_extension / "manifest.json").is_file():
+            raise AssertionError(f"cookie extension was not installed into Browser extension root: {installed_cookie_extension}")
         active_paths = describe_browser_extensions(get_browser_config()).get("active_paths") or []
-        if str(installed_extension) not in active_paths:
-            raise AssertionError(f"uBOL is not enabled through Browser extension manager: {active_paths}")
-        print(f"uBOL is enabled through Browser extension manager: {installed_extension}", flush=True)
+        for expected_path in (installed_extension, installed_cookie_extension):
+            if str(expected_path) not in active_paths:
+                raise AssertionError(f"Browser extension is not enabled through extension manager: {expected_path}; active={active_paths}")
+        print(f"Browser extensions are enabled through extension manager: {active_paths}", flush=True)
 
         blocked = []
         failed = []

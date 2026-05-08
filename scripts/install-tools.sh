@@ -77,7 +77,7 @@ EOF
 }
 
 install_npm_tools() {
-  npm install -g @bitwarden/cli
+  npm install -g @bitwarden/cli @bitwarden/mcp-server
   if ! command -v corepack >/dev/null 2>&1; then
     npm install -g corepack
   fi
