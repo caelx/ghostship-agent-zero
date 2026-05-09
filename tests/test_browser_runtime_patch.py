@@ -25,6 +25,7 @@ def upstream_runtime_source(patch_module) -> str:
         [
             "class _BrowserRuntimeCore:",
             patch_module.OLD_PATHS.rstrip("\n"),
+            patch_module.OLD_SHADOW_SCRIPT.rstrip("\n"),
             "",
         ]
     )
@@ -44,7 +45,10 @@ def test_fresh_upstream_patch_contract() -> None:
 
     required = (
         patch_module.MARKER,
+        patch_module.SHADOW_MARKER,
         "/root/.cache/ghostship-agent-zero/browser/profiles",
+        "globalThis.setTimeout(install, 20000)",
+        'globalThis.addEventListener("load", schedule, { once: true })',
     )
     for snippet in required:
         if snippet not in patched:

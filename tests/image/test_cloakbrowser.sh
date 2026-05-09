@@ -70,6 +70,8 @@ async def smoke() -> None:
     expected_profile_root = "/root/.cache/ghostship-agent-zero/browser/profiles"
     for expected in (
         "# Ghostship CloakBrowser masquerade patch v3",
+        "# Ghostship delay open shadow DOM patch",
+        "globalThis.setTimeout(install, 20000)",
         expected_profile_root,
     ):
         if expected not in runtime_source:

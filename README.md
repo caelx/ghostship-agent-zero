@@ -9,6 +9,7 @@ Thin Docker image customization for Agent Zero with Ghostship tooling, CloakBrow
 - Seeds Bitwarden MCP into Agent Zero's external MCP server settings.
 - Installs CloakBrowser as a transparent replacement behind Agent Zero's normal Playwright Browser path, filtering unwanted Chromium args and injecting CloakBrowser stealth/humanize/geoip behavior at the Playwright boundary.
 - Persists CloakBrowser browser profiles under `/root/.cache/ghostship-agent-zero/browser/profiles`.
+- Delays Agent Zero's open-shadow-DOM Browser helper patch until 20 seconds after each page fully loads.
 - Stages the latest uBlock Origin Lite and "I still don't care about cookies" extensions and seeds Agent Zero's Browser extension manager to enable them at startup.
 - Resolves the latest available package and extension versions during each CI build.
 - Leaves no Ghostship build helper scripts in the final image.
