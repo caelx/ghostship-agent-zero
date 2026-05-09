@@ -2,8 +2,6 @@
 
 FROM agent0ai/agent-zero:latest
 
-ARG GHOSTSHIP_CACHE_BUST=local
-
 ENV CLOAKBROWSER_CACHE_DIR=/opt/cloakbrowser \
     CLOAKBROWSER_AUTO_UPDATE=false \
     DISPLAY=:99 \
@@ -18,28 +16,22 @@ RUN chmod +x /tmp/ghostship/*.sh /tmp/ghostship/*.py
 
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,target=/var/lib/apt/lists,sharing=locked \
-    test -n "$GHOSTSHIP_CACHE_BUST" \
-    && /tmp/ghostship/install-tools.sh apt
+    /tmp/ghostship/install-tools.sh apt
 
 RUN --mount=type=cache,target=/root/.npm \
-    test -n "$GHOSTSHIP_CACHE_BUST" \
-    && /tmp/ghostship/install-tools.sh npm
+    /tmp/ghostship/install-tools.sh npm
 
 RUN --mount=type=cache,target=/root/.cache/uv \
-    test -n "$GHOSTSHIP_CACHE_BUST" \
-    && /tmp/ghostship/install-tools.sh uv
+    /tmp/ghostship/install-tools.sh uv
 
-RUN test -n "$GHOSTSHIP_CACHE_BUST" \
-    && /tmp/ghostship/install-tools.sh github
+RUN /tmp/ghostship/install-tools.sh github
 
-RUN test -n "$GHOSTSHIP_CACHE_BUST" \
-    && /tmp/ghostship/install-tools.sh nix
+RUN /tmp/ghostship/install-tools.sh nix
 
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,target=/var/lib/apt/lists,sharing=locked \
     --mount=type=cache,target=/root/.cache/uv \
-    test -n "$GHOSTSHIP_CACHE_BUST" \
-    && /tmp/ghostship/install-playwright-cloakbrowser.sh
+    /tmp/ghostship/install-playwright-cloakbrowser.sh
 
 RUN /opt/venv-a0/bin/python - <<'PY'
 import site
@@ -90,10 +82,11 @@ config = config.replace(
 path.write_text(config, encoding="utf-8")
 PY
 
-RUN test -n "$GHOSTSHIP_CACHE_BUST" \
-    && mkdir -p /opt/ghostship \
+RUN mkdir -p /opt/ghostship \
     && /tmp/ghostship/install-ublock-origin-lite.py /opt/ghostship/ublock-origin-lite \
     && /tmp/ghostship/install-chrome-web-store-extension.py edibdbjcniadpccecjdfdjjppcpchdlm /opt/ghostship/i-still-dont-care-about-cookies
+
+COPY usr/plugins/ /tmp/ghostship-plugins/
 
 RUN /tmp/ghostship/patch-browser-runtime.py /git/agent-zero/plugins/_browser/helpers/runtime.py \
     && if [ -f /a0/plugins/_browser/helpers/runtime.py ]; then \
@@ -101,6 +94,9 @@ RUN /tmp/ghostship/patch-browser-runtime.py /git/agent-zero/plugins/_browser/hel
     fi \
     && /opt/venv-a0/bin/python /tmp/ghostship/seed-cloakbrowser-playwright.py /git/agent-zero/usr/plugins/_browser/playwright \
     && /opt/venv-a0/bin/python /tmp/ghostship/seed-cloakbrowser-playwright.py /a0/usr/plugins/_browser/playwright \
+    && mkdir -p /git/agent-zero/usr/plugins /a0/usr/plugins \
+    && cp -a /tmp/ghostship-plugins/. /git/agent-zero/usr/plugins/ \
+    && cp -a /tmp/ghostship-plugins/. /a0/usr/plugins/ \
     && mkdir -p /git/agent-zero/extensions/python/startup_migration \
     && cp /tmp/ghostship/seed-bitwarden-mcp-settings.py /git/agent-zero/extensions/python/startup_migration/_05_seed_bitwarden_mcp_settings.py \
     && cp /tmp/ghostship/seed-cloakbrowser-playwright.py /git/agent-zero/extensions/python/startup_migration/_06_seed_cloakbrowser_playwright.py \
@@ -110,4 +106,4 @@ RUN /tmp/ghostship/patch-browser-runtime.py /git/agent-zero/plugins/_browser/hel
       cp /tmp/ghostship/seed-cloakbrowser-playwright.py /a0/extensions/python/startup_migration/_06_seed_cloakbrowser_playwright.py; \
       cp /tmp/ghostship/seed-browser-extensions.py /a0/extensions/python/startup_migration/_07_seed_browser_extensions.py; \
     fi \
-    && rm -rf /tmp/ghostship
+    && rm -rf /tmp/ghostship /tmp/ghostship-plugins

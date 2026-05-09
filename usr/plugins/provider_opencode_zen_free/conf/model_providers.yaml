@@ -1,0 +1,9 @@
+chat:
+  opencode_zen_free:
+    name: OpenCode Zen Free
+    litellm_provider: openai
+    models_list:
+      endpoint_url: "http://127.0.0.1:5000/api/plugins/provider_opencode_zen_free/models"
+      format: "openai"
+    kwargs:
+      api_base: "https://opencode.ai/zen/v1"
