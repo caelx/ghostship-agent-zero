@@ -40,6 +40,22 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     test -n "$GHOSTSHIP_CACHE_BUST" \
     && /tmp/ghostship/install-playwright-cloakbrowser.sh
 
+RUN /opt/venv-a0/bin/python - <<'PY'
+import site
+import shutil
+from pathlib import Path
+
+site_packages = Path(site.getsitepackages()[0])
+shutil.copy2(
+    "/tmp/ghostship/ghostship_cloakbrowser_playwright_shim.py",
+    site_packages / "ghostship_cloakbrowser_playwright_shim.py",
+)
+(site_packages / "ghostship_cloakbrowser_playwright_shim.pth").write_text(
+    "import ghostship_cloakbrowser_playwright_shim\n",
+    encoding="utf-8",
+)
+PY
+
 RUN test -n "$GHOSTSHIP_CACHE_BUST" \
     && mkdir -p /opt/ghostship \
     && /tmp/ghostship/install-ublock-origin-lite.py /opt/ghostship/ublock-origin-lite \
@@ -49,12 +65,15 @@ RUN /tmp/ghostship/patch-browser-runtime.py /git/agent-zero/plugins/_browser/hel
     && if [ -f /a0/plugins/_browser/helpers/runtime.py ]; then \
       /tmp/ghostship/patch-browser-runtime.py /a0/plugins/_browser/helpers/runtime.py; \
     fi \
+    && /opt/venv-a0/bin/python /tmp/ghostship/seed-cloakbrowser-playwright.py /git/agent-zero/usr/plugins/_browser/playwright \
+    && /opt/venv-a0/bin/python /tmp/ghostship/seed-cloakbrowser-playwright.py /a0/usr/plugins/_browser/playwright \
     && mkdir -p /git/agent-zero/extensions/python/startup_migration \
     && cp /tmp/ghostship/seed-bitwarden-mcp-settings.py /git/agent-zero/extensions/python/startup_migration/_05_seed_bitwarden_mcp_settings.py \
+    && cp /tmp/ghostship/seed-cloakbrowser-playwright.py /git/agent-zero/extensions/python/startup_migration/_06_seed_cloakbrowser_playwright.py \
+    && cp /tmp/ghostship/seed-browser-extensions.py /git/agent-zero/extensions/python/startup_migration/_07_seed_browser_extensions.py \
     && if [ -d /a0/extensions/python/startup_migration ]; then \
       cp /tmp/ghostship/seed-bitwarden-mcp-settings.py /a0/extensions/python/startup_migration/_05_seed_bitwarden_mcp_settings.py; \
+      cp /tmp/ghostship/seed-cloakbrowser-playwright.py /a0/extensions/python/startup_migration/_06_seed_cloakbrowser_playwright.py; \
+      cp /tmp/ghostship/seed-browser-extensions.py /a0/extensions/python/startup_migration/_07_seed_browser_extensions.py; \
     fi \
-    && rm -rf \
-      /tmp/ghostship \
-      /a0/usr/plugins/_browser/playwright \
-      /git/agent-zero/usr/plugins/_browser/playwright
+    && rm -rf /tmp/ghostship

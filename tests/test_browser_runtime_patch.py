@@ -8,6 +8,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 PATCH_SCRIPT = ROOT / "scripts" / "patch-browser-runtime.py"
+SHIM_SCRIPT = ROOT / "scripts" / "ghostship_cloakbrowser_playwright_shim.py"
 
 
 def load_patch_module():
@@ -22,11 +23,7 @@ def load_patch_module():
 def upstream_runtime_source(patch_module) -> str:
     return "\n".join(
         [
-            patch_module.OLD_CONFIG_IMPORT,
-            patch_module.OLD_IMPORT,
-            "",
             "class _BrowserRuntimeCore:",
-            patch_module.OLD_START.rstrip("\n"),
             patch_module.OLD_PATHS.rstrip("\n"),
             "",
         ]
@@ -47,41 +44,23 @@ def test_fresh_upstream_patch_contract() -> None:
 
     required = (
         patch_module.MARKER,
-        "from cloakbrowser import launch_persistent_context_async",
-        "describe_browser_extensions",
-        "get_extensions_root",
-        "set_browser_extension_enabled",
-        "/opt/ghostship",
-        "ublock-origin-lite",
-        "i-still-dont-care-about-cookies",
         "/root/.cache/ghostship-agent-zero/browser/profiles",
-        '"headless": True',
-        '"humanize": True',
-        '"geoip": True',
-        '"args": extension_args',
     )
     for snippet in required:
         if snippet not in patched:
             raise AssertionError(f"patched runtime missing required snippet: {snippet}")
 
     forbidden = (
-        "from playwright.async_api import async_playwright",
-        "build_browser_launch_config",
-        "configure_playwright_env",
-        "ensure_playwright_binary",
-        "launch_config",
-        "browser_binary",
-        '"screen"',
-        '"no_viewport"',
-        '"channel"',
-        '"executable_path"',
-        "--disable-gpu",
-        "--disable-dev-shm-usage",
-        "/usr/local/share/ublock-origin-lite",
+        "launch_persistent_context_async",
+        "describe_browser_extensions",
+        "set_browser_extension_enabled",
+        "/opt/ghostship",
+        "humanize",
+        "geoip",
     )
     for snippet in forbidden:
         if snippet in patched:
-            raise AssertionError(f"patched runtime retained forbidden snippet: {snippet}")
+            raise AssertionError(f"runtime patch should not own CloakBrowser launch behavior: {snippet}")
 
 
 def test_patch_is_idempotent() -> None:
@@ -103,7 +82,7 @@ def test_legacy_patch_fails_fast() -> None:
     patch_module = load_patch_module()
     with tempfile.TemporaryDirectory() as tmp:
         runtime_path = Path(tmp) / "runtime.py"
-        runtime_path.write_text(patch_module.LEGACY_MARKER, encoding="utf-8")
+        runtime_path.write_text(patch_module.LEGACY_MARKERS[0], encoding="utf-8")
 
         try:
             patch_module.patch_runtime(runtime_path)
@@ -114,10 +93,31 @@ def test_legacy_patch_fails_fast() -> None:
             raise AssertionError("legacy-patched runtime did not fail fast")
 
 
+def test_playwright_shim_contract() -> None:
+    source = SHIM_SCRIPT.read_text(encoding="utf-8")
+    required = (
+        "BrowserType.launch_persistent_context = launch_persistent_context",
+        "BrowserType.launch = launch",
+        "ensure_binary()",
+        "build_args(",
+        "maybe_resolve_geoip(True",
+        "patch_context_async",
+        "DROP_ARG_PREFIXES",
+        "--disable-dev-shm-usage",
+        "--disable-gpu",
+        "--disable-extensions",
+        "IGNORE_DEFAULT_ARGS",
+    )
+    for snippet in required:
+        if snippet not in source:
+            raise AssertionError(f"Playwright shim missing required snippet: {snippet}")
+
+
 def main() -> int:
     test_fresh_upstream_patch_contract()
     test_patch_is_idempotent()
     test_legacy_patch_fails_fast()
+    test_playwright_shim_contract()
     print("browser runtime patch contract tests passed")
     return 0
 

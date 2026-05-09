@@ -7,9 +7,9 @@ Thin Docker image customization for Agent Zero with Ghostship tooling, CloakBrow
 - Uses `agent0ai/agent-zero:latest` as the baseline.
 - Installs the global agent tool baseline: `bw`, `mcp-server-bitwarden`, `gh`, `git`, `openssh-client`, `curl`, `wget`, `ca-certificates`, `jq`, `yq`, `rg`, `fd`, `python3`, `pip`, `uv`, `nodejs`, `npm`, `npx`, `corepack`, `nix`, `make`, `just`, `bash`, `tar`, `gzip`, `xz`, `zstd`, `zip`, `unzip`, `7zip`, `file`, `less`, `tree`, `tmux`, `pre-commit`, `gitleaks`, `trufflehog`, `git-secrets`, `git-filter-repo`, `shellcheck`, `shfmt`, and `actionlint`.
 - Seeds Bitwarden MCP into Agent Zero's external MCP server settings.
-- Installs CloakBrowser and patches Agent Zero's `_browser` runtime at build time to call `launch_persistent_context_async(..., humanize=True, geoip=True, headless=True)`.
+- Installs CloakBrowser as a transparent replacement behind Agent Zero's normal Playwright Browser path, filtering unwanted Chromium args and injecting CloakBrowser stealth/humanize/geoip behavior at the Playwright boundary.
 - Persists CloakBrowser browser profiles under `/root/.cache/ghostship-agent-zero/browser/profiles`.
-- Stages the latest uBlock Origin Lite and "I still don't care about cookies" extensions and lets Agent Zero's Browser extension manager enable them at runtime.
+- Stages the latest uBlock Origin Lite and "I still don't care about cookies" extensions and seeds Agent Zero's Browser extension manager to enable them at startup.
 - Resolves the latest available package and extension versions during each CI build.
 - Leaves no Ghostship build helper scripts in the final image.
 

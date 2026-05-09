@@ -16,3 +16,4 @@
 - Updated the Browser runtime patch to let CloakBrowser own launch defaults, enable GeoIP, and install uBlock Origin Lite through Agent Zero's native extension manager.
 - Added Bitwarden MCP server installation with default Agent Zero MCP settings seeding.
 - Added "I still don't care about cookies" as a staged CloakBrowser extension through Agent Zero's extension manager.
+- Switched CloakBrowser integration to masquerade behind Agent Zero's normal Playwright Chromium cache, with a Playwright boundary shim for CloakBrowser args, humanize, and GeoIP.

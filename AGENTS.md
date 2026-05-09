@@ -7,11 +7,11 @@
 ## Project Notes
 
 - This repo is a thin Docker overlay on `agent0ai/agent-zero:latest`, not a full fork.
-- Browser customization is applied only at image build time by patching Agent Zero runtime files.
+- Browser customization keeps Agent Zero's Playwright Browser path and uses a CloakBrowser Playwright-boundary shim plus a minimal profile-path patch.
 - Build helpers live in `scripts/`; tests and test runners live in `tests/`.
 - Image tests should focus on installed tools and real patched browser behavior.
-- Staged uBlock Origin Lite lives at `/opt/ghostship/ublock-origin-lite`; Browser runtime copies/enables it through Agent Zero's extension manager.
-- Staged "I still don't care about cookies" lives at `/opt/ghostship/i-still-dont-care-about-cookies` and uses the same Browser extension-manager path.
+- Staged uBlock Origin Lite lives at `/opt/ghostship/ublock-origin-lite`; startup migration copies/enables it through Agent Zero's extension manager.
+- Staged "I still don't care about cookies" lives at `/opt/ghostship/i-still-dont-care-about-cookies` and uses the same startup extension-manager path.
 - Bitwarden MCP is seeded into Agent Zero settings with `mcp-server-bitwarden`; use `BW_CLIENT_ID` and `BW_CLIENT_SECRET`.
 - uBlock Origin Lite tests should assert blocked network requests, not MV3 service-worker visibility.
 - Persist only `/a0/usr` and `/root`; do not add custom XDG/runtime path plumbing.
