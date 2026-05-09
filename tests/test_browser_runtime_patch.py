@@ -24,10 +24,14 @@ def upstream_runtime_source(patch_module) -> str:
     return "\n".join(
         [
             "class _BrowserRuntimeCore:",
-            patch_module.OLD_PATHS.rstrip("\n"),
+            "    @property",
+            "    def profile_dir(self) -> Path:",
+            '        return Path(files.get_abs_path("tmp/browser/sessions", self.safe_context_id))',
+            "",
             "    async def _start(self) -> None:",
             patch_module.OLD_SHADOW_INIT.rstrip("\n"),
             "        await self.context.add_init_script(path=str(CONTENT_HELPER_PATH))",
+            patch_module.OLD_ABOUT_BLANK_CLOSE.rstrip("\n"),
             "",
         ]
     )
@@ -46,9 +50,10 @@ def test_fresh_upstream_patch_contract() -> None:
         raise AssertionError("fresh upstream runtime was not patched")
 
     required = (
-        patch_module.MARKER,
         patch_module.SHADOW_INIT_MARKER,
-        "/root/.cache/ghostship-agent-zero/browser/profiles",
+        patch_module.HEADED_PLACEHOLDER_MARKER,
+        "initial_pages = list(self.context.pages)",
+        'files.get_abs_path("tmp/browser/sessions", self.safe_context_id)',
     )
     for snippet in required:
         if snippet not in patched:
@@ -62,6 +67,7 @@ def test_fresh_upstream_patch_contract() -> None:
         "humanize",
         "geoip",
         "add_init_script(self._shadow_dom_script())",
+        "/root/.cache/ghostship-agent-zero/browser/profiles",
     )
     for snippet in forbidden:
         if snippet in patched:
@@ -107,6 +113,12 @@ def test_playwright_shim_contract() -> None:
         "build_args(",
         "maybe_resolve_geoip(True",
         "patch_context_async",
+        "headless = False",
+        'kwargs["viewport"] = {"width": FINGERPRINT_WIDTH, "height": FINGERPRINT_HEIGHT}',
+        'kwargs["screen"] = {"width": FINGERPRINT_WIDTH, "height": FINGERPRINT_HEIGHT}',
+        "--fingerprint-noise=false",
+        "--fingerprint-screen-width",
+        "--fingerprint-screen-height",
         "DROP_ARG_PREFIXES",
         "--disable-dev-shm-usage",
         "--disable-gpu",

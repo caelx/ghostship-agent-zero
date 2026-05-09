@@ -3,7 +3,7 @@ set -euo pipefail
 
 . "/ins/setup_venv.sh" local
 
-uv pip install playwright 'cloakbrowser[geoip]'
+uv pip install --upgrade playwright 'cloakbrowser[geoip]'
 
 export CLOAKBROWSER_CACHE_DIR="${CLOAKBROWSER_CACHE_DIR:-/opt/cloakbrowser}"
 export CLOAKBROWSER_AUTO_UPDATE="${CLOAKBROWSER_AUTO_UPDATE:-false}"
@@ -24,6 +24,7 @@ apt-get install -y --no-install-recommends \
   fonts-noto-color-emoji \
   fonts-tlwg-loma-otf \
   fonts-wqy-zenhei \
+  xvfb \
   libatk-bridge2.0-0 \
   libatk1.0-0 \
   libatspi2.0-0 \
@@ -49,4 +50,5 @@ apt-get install -y --no-install-recommends \
   "$audio_package"
 
 python -m cloakbrowser install
+python -m cloakbrowser update
 python -m cloakbrowser info

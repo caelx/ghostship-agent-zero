@@ -8,6 +8,8 @@ from typing import Any
 
 LOGGER = logging.getLogger("ghostship.cloakbrowser.playwright")
 PATCH_MARKER = "_ghostship_cloakbrowser_patched"
+FINGERPRINT_WIDTH = 1440
+FINGERPRINT_HEIGHT = 960
 
 DROP_ARG_PREFIXES = (
     "--disable-dev-shm-usage",
@@ -49,6 +51,12 @@ def _filtered_extra_args(args: Any) -> list[str]:
     return filtered
 
 
+def _ensure_arg(args: list[str], arg: str) -> None:
+    key = arg.split("=", 1)[0]
+    if not any(existing == key or existing.startswith(f"{key}=") for existing in args):
+        args.append(arg)
+
+
 def _cloak_kwargs(kwargs: dict[str, Any]) -> dict[str, Any]:
     from cloakbrowser import ensure_binary
     from cloakbrowser.browser import (
@@ -62,9 +70,12 @@ def _cloak_kwargs(kwargs: dict[str, Any]) -> dict[str, Any]:
     proxy = kwargs.pop("proxy", None)
     timezone = kwargs.pop("timezone_id", None)
     locale = kwargs.pop("locale", None)
-    headless = True if kwargs.get("headless") is None else bool(kwargs.get("headless"))
+    headless = False
 
     extra_args = _filtered_extra_args(kwargs.pop("args", None))
+    _ensure_arg(extra_args, "--fingerprint-noise=false")
+    _ensure_arg(extra_args, f"--fingerprint-screen-width={FINGERPRINT_WIDTH}")
+    _ensure_arg(extra_args, f"--fingerprint-screen-height={FINGERPRINT_HEIGHT}")
     timezone, locale, exit_ip = maybe_resolve_geoip(True, proxy, timezone, locale)
     proxy_kwargs, proxy_extra_args = _resolve_proxy_config(proxy)
     extra_args = _resolve_webrtc_args(extra_args + proxy_extra_args, proxy) or []
@@ -73,11 +84,14 @@ def _cloak_kwargs(kwargs: dict[str, Any]) -> dict[str, Any]:
 
     kwargs.pop("channel", None)
     kwargs.pop("screen", None)
+    kwargs.pop("viewport", None)
     if kwargs.get("no_viewport") is False:
         kwargs.pop("no_viewport", None)
 
     kwargs["executable_path"] = ensure_binary()
     kwargs["headless"] = headless
+    kwargs["viewport"] = {"width": FINGERPRINT_WIDTH, "height": FINGERPRINT_HEIGHT}
+    kwargs["screen"] = {"width": FINGERPRINT_WIDTH, "height": FINGERPRINT_HEIGHT}
     kwargs["args"] = build_args(
         True,
         extra_args,

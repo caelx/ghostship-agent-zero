@@ -6,6 +6,7 @@ ARG GHOSTSHIP_CACHE_BUST=local
 
 ENV CLOAKBROWSER_CACHE_DIR=/opt/cloakbrowser \
     CLOAKBROWSER_AUTO_UPDATE=false \
+    DISPLAY=:99 \
     GH_PROMPT_DISABLED=1 \
     A0_SET_mcp_servers='{"mcpServers":{"bitwarden":{"type":"stdio","command":"mcp-server-bitwarden","args":[],"disabled":false}}}'
 
@@ -54,6 +55,39 @@ shutil.copy2(
     "import ghostship_cloakbrowser_playwright_shim\n",
     encoding="utf-8",
 )
+PY
+
+RUN python3 - <<'PY'
+from pathlib import Path
+
+path = Path("/etc/supervisor/conf.d/supervisord.conf")
+config = path.read_text(encoding="utf-8")
+if "[program:run_xvfb]" not in config:
+    config += """
+
+[program:run_xvfb]
+command=/usr/bin/Xvfb :99 -screen 0 1440x960x24 -nolisten tcp
+environment=
+priority=10
+stopwaitsecs=1
+stdout_logfile=/dev/stdout
+stdout_logfile_maxbytes=0
+stderr_logfile=/dev/stderr
+stderr_logfile_maxbytes=0
+autorestart=true
+startretries=3
+stopasgroup=true
+killasgroup=true
+"""
+config = config.replace(
+    "[program:run_ui]\ncommand=/exe/run_A0.sh\nenvironment=",
+    "[program:run_ui]\ncommand=/exe/run_A0.sh\nenvironment=DISPLAY=\":99\"\npriority=20",
+)
+config = config.replace(
+    "[program:run_tunnel_api]\ncommand=/exe/run_tunnel_api.sh\nenvironment=",
+    "[program:run_tunnel_api]\ncommand=/exe/run_tunnel_api.sh\nenvironment=DISPLAY=\":99\"\npriority=20",
+)
+path.write_text(config, encoding="utf-8")
 PY
 
 RUN test -n "$GHOSTSHIP_CACHE_BUST" \

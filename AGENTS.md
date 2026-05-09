@@ -7,7 +7,7 @@
 ## Project Notes
 
 - This repo is a thin Docker overlay on `agent0ai/agent-zero:latest`, not a full fork.
-- Browser customization keeps Agent Zero's Playwright Browser path and uses a CloakBrowser Playwright-boundary shim plus a minimal profile-path patch.
+- Browser customization keeps Agent Zero's Playwright Browser path and uses a CloakBrowser Playwright-boundary shim.
 - Build helpers live in `scripts/`; tests and test runners live in `tests/`.
 - Image tests should focus on installed tools and real patched browser behavior.
 - Staged uBlock Origin Lite lives at `/opt/ghostship/ublock-origin-lite`; startup migration copies/enables it through Agent Zero's extension manager.
@@ -15,7 +15,8 @@
 - Bitwarden MCP is seeded into Agent Zero settings with `mcp-server-bitwarden`; use `BW_CLIENT_ID` and `BW_CLIENT_SECRET`.
 - uBlock Origin Lite tests should assert blocked network requests, not MV3 service-worker visibility.
 - Persist only `/a0/usr` and `/root`; do not add custom XDG/runtime path plumbing.
-- CloakBrowser profiles persist under `/root/.cache/ghostship-agent-zero/browser/profiles`.
+- Browser profiles use Agent Zero's upstream `tmp/browser/sessions` path.
+- CloakBrowser runs headed under Xvfb on `DISPLAY=:99`; do not add VNC/Desktop mode.
 - Agent Zero's open-shadow-DOM Browser helper init patch is disabled.
 - Do not leave Ghostship helper scripts in the final image unless runtime behavior truly requires them.
 - Work in feature branches with pull requests; do not merge until PR CI passes.

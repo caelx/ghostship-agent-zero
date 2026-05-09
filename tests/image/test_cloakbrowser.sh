@@ -6,8 +6,11 @@ source "$(dirname "$0")/lib.sh"
 echo "checking CloakBrowser install"
 run_bash_in_image '. /ins/setup_venv.sh local && python -m cloakbrowser info'
 
+echo "checking headed display runtime wiring"
+run_bash_in_image 'command -v Xvfb >/dev/null && test "$DISPLAY" = ":99" && grep -q "\[program:run_xvfb\]" /etc/supervisor/conf.d/supervisord.conf && grep -q "1440x960x24" /etc/supervisor/conf.d/supervisord.conf'
+
 echo "checking CloakBrowser masquerades as Agent Zero Playwright Chromium"
-run_bash_in_image '. /ins/setup_venv.sh local && PYTHONPATH=/git/agent-zero python - <<'"'"'PY'"'"'
+run_bash_in_image 'Xvfb :99 -screen 0 1440x960x24 -nolisten tcp >/tmp/ghostship-xvfb.log 2>&1 & xvfb_pid=$!; trap "kill $xvfb_pid 2>/dev/null || true" EXIT; sleep 1; . /ins/setup_venv.sh local && PYTHONPATH=/git/agent-zero python - <<'"'"'PY'"'"'
 import asyncio
 import importlib.util
 import inspect
@@ -67,11 +70,11 @@ async def smoke() -> None:
 
     runtime_source = inspect.getsource(runtime)
     core_source = inspect.getsource(runtime._BrowserRuntimeCore)
-    expected_profile_root = "/root/.cache/ghostship-agent-zero/browser/profiles"
     for expected in (
-        "# Ghostship CloakBrowser masquerade patch v3",
         "# Ghostship disabled open shadow DOM init patch",
-        expected_profile_root,
+        "# Ghostship preserve headed placeholder page",
+        "initial_pages = list(self.context.pages)",
+        "files.get_abs_path(\"tmp/browser/sessions\", self.safe_context_id)",
     ):
         if expected not in runtime_source:
             raise AssertionError(f"missing patched runtime source marker: {expected}")
@@ -83,15 +86,17 @@ async def smoke() -> None:
         "/opt/ghostship",
         "humanize",
         "geoip",
+        "/root/.cache/ghostship-agent-zero/browser/profiles",
     ):
         if forbidden in core_source:
             raise AssertionError(f"runtime patch should not own CloakBrowser launch behavior: {forbidden}")
-    print("runtime keeps upstream Playwright launch path with Ghostship profile root", flush=True)
+    print("runtime keeps upstream Playwright launch path and profile root", flush=True)
 
     core = runtime._BrowserRuntimeCore("ghostship-cloakbrowser-test")
-    if not str(core.profile_dir).startswith(expected_profile_root):
-        raise AssertionError(f"profile dir is not under /root cache: {core.profile_dir}")
+    if "tmp/browser/sessions" not in str(core.profile_dir):
+        raise AssertionError(f"profile dir does not use upstream browser sessions path: {core.profile_dir}")
 
+    close_checked = False
     try:
         print("opening patched browser runtime", flush=True)
         await core.open("data:text/html,<title>ghostship cloakbrowser</title>")
@@ -111,8 +116,33 @@ async def smoke() -> None:
         for forbidden_arg in ("--disable-gpu", "--disable-dev-shm-usage", "--disable-extensions"):
             if f" {forbidden_arg} " in f" {joined_commands} ":
                 raise AssertionError(f"CloakBrowser Playwright shim did not filter {forbidden_arg}: {joined_commands}")
+        if "--headless" in joined_commands:
+            raise AssertionError(f"CloakBrowser Playwright shim did not force headed mode: {joined_commands}")
         if "--fingerprint=" not in joined_commands:
             raise AssertionError(f"CloakBrowser stealth args were not injected: {joined_commands}")
+        for required_arg in (
+            "--fingerprint-noise=false",
+            "--fingerprint-screen-width=1440",
+            "--fingerprint-screen-height=960",
+        ):
+            if required_arg not in joined_commands:
+                raise AssertionError(f"CloakBrowser fingerprint arg missing: {required_arg}; commands={joined_commands}")
+        dimensions = await page.evaluate(
+            """() => ({
+                innerWidth: window.innerWidth,
+                innerHeight: window.innerHeight,
+                screenWidth: window.screen.width,
+                screenHeight: window.screen.height,
+            })"""
+        )
+        expected_dimensions = {
+            "innerWidth": 1440,
+            "innerHeight": 960,
+            "screenWidth": 1440,
+            "screenHeight": 960,
+        }
+        if dimensions != expected_dimensions:
+            raise AssertionError(f"unexpected viewport/screen dimensions: {dimensions}")
         print("Playwright boundary shim filtered Agent Zero args and injected CloakBrowser args", flush=True)
 
         installed_extension = get_extensions_root() / "ghostship" / "ublock-origin-lite"
@@ -166,10 +196,16 @@ async def smoke() -> None:
             )
         print(f"uBOL blocked ad probe: {blocked[0]}", flush=True)
     finally:
-        try:
-            await asyncio.wait_for(core.close(delete_profile=True), timeout=15)
-        except Exception as exc:
-            print(f"browser cleanup warning: {exc!r}", flush=True)
+        await asyncio.wait_for(core.close(delete_profile=True), timeout=15)
+        close_checked = True
+        await asyncio.sleep(1)
+        leftovers = browser_command_lines(core.profile_dir)
+        if leftovers:
+            raise AssertionError(f"Chromium processes survived Browser close: {leftovers}")
+        print("Browser close terminated Chromium processes", flush=True)
+
+    if not close_checked:
+        raise AssertionError("Browser close path was not checked")
 
 
 asyncio.run(asyncio.wait_for(smoke(), timeout=120))

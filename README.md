@@ -7,8 +7,8 @@ Thin Docker image customization for Agent Zero with Ghostship tooling, CloakBrow
 - Uses `agent0ai/agent-zero:latest` as the baseline.
 - Installs the global agent tool baseline: `bw`, `mcp-server-bitwarden`, `gh`, `git`, `openssh-client`, `curl`, `wget`, `ca-certificates`, `jq`, `yq`, `rg`, `fd`, `python3`, `pip`, `uv`, `nodejs`, `npm`, `npx`, `corepack`, `nix`, `make`, `just`, `bash`, `tar`, `gzip`, `xz`, `zstd`, `zip`, `unzip`, `7zip`, `file`, `less`, `tree`, `tmux`, `pre-commit`, `gitleaks`, `trufflehog`, `git-secrets`, `git-filter-repo`, `shellcheck`, `shfmt`, and `actionlint`.
 - Seeds Bitwarden MCP into Agent Zero's external MCP server settings.
-- Installs CloakBrowser as a transparent replacement behind Agent Zero's normal Playwright Browser path, filtering unwanted Chromium args and injecting CloakBrowser stealth/humanize/geoip behavior at the Playwright boundary.
-- Persists CloakBrowser browser profiles under `/root/.cache/ghostship-agent-zero/browser/profiles`.
+- Installs CloakBrowser as a transparent headed replacement behind Agent Zero's normal Playwright Browser path, filtering unwanted Chromium args and injecting CloakBrowser stealth/humanize/geoip/fingerprint behavior at the Playwright boundary.
+- Uses Agent Zero's upstream Browser profile paths under `tmp/browser/sessions`.
 - Disables Agent Zero's open-shadow-DOM Browser helper init patch so page shadow-root mode is not rewritten.
 - Stages the latest uBlock Origin Lite and "I still don't care about cookies" extensions and seeds Agent Zero's Browser extension manager to enable them at startup.
 - Resolves the latest available package and extension versions during each CI build.
@@ -19,7 +19,7 @@ Thin Docker image customization for Agent Zero with Ghostship tooling, CloakBrow
 Persist only these paths:
 
 - `/a0/usr` for Agent Zero user state, projects, chats, and settings.
-- `/root` for CLI auth, SSH keys, git/gh config, caches, shell state, local package-manager state, and CloakBrowser profiles.
+- `/root` for CLI auth, SSH keys, git/gh config, caches, shell state, and local package-manager state.
 
 The image does not create a custom runtime directory, override XDG paths, or redirect tool caches.
 
