@@ -58,8 +58,6 @@ jobs:
           tags: |
             ${{ env.TEST_IMAGE }}
             ${{ env.REGISTRY_IMAGE }}:amd64-${{ github.sha }}
-          build-args: |
-            GHOSTSHIP_CACHE_BUST=${{ github.run_id }}
           cache-from: type=gha,scope=agent-zero-amd64
           cache-to: type=gha,scope=agent-zero-amd64,mode=max
 
@@ -121,8 +119,6 @@ jobs:
           platforms: linux/arm64
           push: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
           tags: ${{ env.REGISTRY_IMAGE }}:arm64-${{ github.sha }}
-          build-args: |
-            GHOSTSHIP_CACHE_BUST=${{ github.run_id }}
           cache-from: type=gha,scope=agent-zero-arm64
           cache-to: type=gha,scope=agent-zero-arm64,mode=max
 

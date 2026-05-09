@@ -1,0 +1,9 @@
+chat:
+  ollama_cloud:
+    name: Ollama Cloud
+    litellm_provider: ollama
+    models_list:
+      endpoint_url: "https://ollama.com/api/tags"
+      format: "ollama"
+    kwargs:
+      api_base: "https://ollama.com"

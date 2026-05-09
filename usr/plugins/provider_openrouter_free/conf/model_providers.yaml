@@ -1,0 +1,12 @@
+chat:
+  openrouter_free:
+    name: OpenRouter Free
+    litellm_provider: openrouter
+    models_list:
+      endpoint_url: "http://127.0.0.1:5000/api/plugins/provider_openrouter_free/models"
+      format: "openai"
+    kwargs:
+      extra_headers:
+        "HTTP-Referer": "https://agent-zero.ai/"
+        "X-Title": "Agent Zero"
+        "X-OpenRouter-Categories": "personal-agent,cloud-agent"

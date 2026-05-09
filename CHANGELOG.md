@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+- Added Agent Zero provider plugins for Ollama Cloud, OpenCode Go, NVIDIA Build Free, OpenCode Zen Free, and OpenRouter Free.
+- Added dynamic catalog filtering for NVIDIA Build tool-call-capable models, OpenCode Zen free models, and OpenRouter free text/tool models.
+- Added provider API key environment variables to the example environment and Compose service.
+- Improved CI build speed by allowing stable Docker install layers to reuse BuildKit cache.
+
 ## 0.1.0 - 2026-05-06
 
 - Added thin Agent Zero overlay image.

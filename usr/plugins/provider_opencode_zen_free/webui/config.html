@@ -1,0 +1,37 @@
+<div x-data="filteredProviderStatus('/api/plugins/provider_opencode_zen_free/models')" x-init="refresh()" class="space-y-4">
+  <div>
+    <div class="text-sm font-semibold">OpenCode Zen Free</div>
+    <div class="text-xs opacity-70">Provider ID: opencode_zen_free</div>
+  </div>
+  <dl class="grid gap-2 text-sm">
+    <div><dt class="font-medium">Required env var</dt><dd>OPENCODE_ZEN_FREE_API_KEY</dd></div>
+    <div><dt class="font-medium">Catalog URL</dt><dd>https://opencode.ai/zen/v1/models</dd></div>
+    <div><dt class="font-medium">Last model-list request status</dt><dd x-text="status"></dd></div>
+    <div><dt class="font-medium">Included model count</dt><dd x-text="included"></dd></div>
+    <div><dt class="font-medium">Excluded model count</dt><dd x-text="excluded"></dd></div>
+    <div><dt class="font-medium">Excluded reasons</dt><dd x-text="reasons"></dd></div>
+  </dl>
+</div>
+<script>
+function filteredProviderStatus(url) {
+  return {
+    status: "Not checked",
+    included: 0,
+    excluded: 0,
+    reasons: "None",
+    async refresh() {
+      try {
+        const res = await fetch(url);
+        const data = await res.json();
+        const meta = data.meta || {};
+        this.status = meta.status || (res.ok ? "OK" : `HTTP ${res.status}`);
+        this.included = meta.included_count || 0;
+        this.excluded = meta.excluded_count || 0;
+        this.reasons = JSON.stringify(meta.excluded_reasons || {});
+      } catch (err) {
+        this.status = err?.message || "Request failed";
+      }
+    }
+  };
+}
+</script>

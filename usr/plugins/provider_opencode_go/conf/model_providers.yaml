@@ -1,0 +1,9 @@
+chat:
+  opencode_go:
+    name: OpenCode Go
+    litellm_provider: openai
+    models_list:
+      endpoint_url: "https://opencode.ai/zen/go/v1/models"
+      format: "openai"
+    kwargs:
+      api_base: "https://opencode.ai/zen/go/v1"

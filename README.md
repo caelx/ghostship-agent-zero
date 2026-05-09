@@ -11,7 +11,8 @@ Thin Docker image customization for Agent Zero with Ghostship tooling, CloakBrow
 - Uses Agent Zero's upstream Browser profile paths under `tmp/browser/sessions`.
 - Disables Agent Zero's open-shadow-DOM Browser helper init patch so page shadow-root mode is not rewritten.
 - Stages the latest uBlock Origin Lite and "I still don't care about cookies" extensions and seeds Agent Zero's Browser extension manager to enable them at startup.
-- Resolves the latest available package and extension versions during each CI build.
+- Adds optional provider plugins for Ollama Cloud, OpenCode Go, NVIDIA Build Free, OpenCode Zen Free, and OpenRouter Free.
+- Uses Docker layer caching so stable tool and browser install layers are reused across CI builds.
 - Leaves no Ghostship build helper scripts in the final image.
 
 ## Persistence
@@ -54,6 +55,16 @@ Copy `.env.example` to `.env` and set these values if you want agents to use Bit
 `BW_SESSION` is not treated as durable configuration. It is an ephemeral Bitwarden unlock session key used by the Bitwarden CLI and MCP server.
 
 `GH_PROMPT_DISABLED=1` is baked into the image so GitHub CLI commands avoid interactive prompts.
+
+Optional Agent Zero provider plugins use these API key env vars:
+
+- `OLLAMA_CLOUD_API_KEY`
+- `OPENCODE_GO_API_KEY`
+- `NVIDIA_BUILD_FREE_API_KEY`
+- `OPENCODE_ZEN_FREE_API_KEY`
+- `OPENROUTER_FREE_API_KEY`
+
+The provider plugins register chat providers through Agent Zero's plugin `conf/model_providers.yaml` path. Model dropdowns are dynamically resolved from upstream catalogs; filtered providers expose local plugin catalog endpoints for Agent Zero's normal model search.
 
 ## CI And Images
 
