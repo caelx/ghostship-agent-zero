@@ -25,7 +25,9 @@ def upstream_runtime_source(patch_module) -> str:
         [
             "class _BrowserRuntimeCore:",
             patch_module.OLD_PATHS.rstrip("\n"),
-            patch_module.OLD_SHADOW_SCRIPT.rstrip("\n"),
+            "    async def _start(self) -> None:",
+            patch_module.OLD_SHADOW_INIT.rstrip("\n"),
+            "        await self.context.add_init_script(path=str(CONTENT_HELPER_PATH))",
             "",
         ]
     )
@@ -45,10 +47,8 @@ def test_fresh_upstream_patch_contract() -> None:
 
     required = (
         patch_module.MARKER,
-        patch_module.SHADOW_MARKER,
+        patch_module.SHADOW_INIT_MARKER,
         "/root/.cache/ghostship-agent-zero/browser/profiles",
-        "globalThis.setTimeout(install, 20000)",
-        'globalThis.addEventListener("load", schedule, { once: true })',
     )
     for snippet in required:
         if snippet not in patched:
@@ -61,6 +61,7 @@ def test_fresh_upstream_patch_contract() -> None:
         "/opt/ghostship",
         "humanize",
         "geoip",
+        "add_init_script(self._shadow_dom_script())",
     )
     for snippet in forbidden:
         if snippet in patched:

@@ -6,7 +6,7 @@ from pathlib import Path
 
 
 MARKER = "# Ghostship CloakBrowser masquerade patch v3"
-SHADOW_MARKER = "# Ghostship delay open shadow DOM patch"
+SHADOW_INIT_MARKER = "# Ghostship disabled open shadow DOM init patch"
 LEGACY_MARKERS = (
     "# Ghostship CloakBrowser humanize patch",
     "# Ghostship CloakBrowser native headless patch v2",
@@ -39,46 +39,8 @@ NEW_PATHS = f"""    @property
         return Path(files.get_abs_path("tmp/browser/screenshots", self.safe_context_id))
 """
 
-OLD_SHADOW_SCRIPT = '''    @staticmethod
-    def _shadow_dom_script() -> str:
-        return """
-(() => {
-  const original = Element.prototype.attachShadow;
-  if (original && !original.__a0BrowserOpenShadowPatch) {
-    const patched = function attachShadow(options) {
-      return original.call(this, { ...(options || {}), mode: "open" });
-    };
-    patched.__a0BrowserOpenShadowPatch = true;
-    Element.prototype.attachShadow = patched;
-  }
-})();
-"""
-'''
-
-NEW_SHADOW_SCRIPT = f'''    @staticmethod
-    def _shadow_dom_script() -> str:
-        return """
-(() => {{
-  // {SHADOW_MARKER}
-  const install = () => {{
-    const original = Element.prototype.attachShadow;
-    if (original && !original.__a0BrowserOpenShadowPatch) {{
-      const patched = function attachShadow(options) {{
-        return original.call(this, {{ ...(options || {{}}), mode: "open" }});
-      }};
-      patched.__a0BrowserOpenShadowPatch = true;
-      Element.prototype.attachShadow = patched;
-    }}
-  }};
-  const schedule = () => globalThis.setTimeout(install, 20000);
-  if (globalThis.document?.readyState === "complete") {{
-    schedule();
-  }} else {{
-    globalThis.addEventListener("load", schedule, {{ once: true }});
-  }}
-}})();
-"""
-'''
+OLD_SHADOW_INIT = "        await self.context.add_init_script(self._shadow_dom_script())\n"
+NEW_SHADOW_INIT = f"        {SHADOW_INIT_MARKER}\n"
 
 
 def patch_runtime(path: Path) -> bool:
@@ -95,8 +57,8 @@ def patch_runtime(path: Path) -> bool:
         source = source.replace(OLD_PATHS, NEW_PATHS)
         changed = True
 
-    if SHADOW_MARKER not in source and OLD_SHADOW_SCRIPT in source:
-        source = source.replace(OLD_SHADOW_SCRIPT, NEW_SHADOW_SCRIPT)
+    if SHADOW_INIT_MARKER not in source and OLD_SHADOW_INIT in source:
+        source = source.replace(OLD_SHADOW_INIT, NEW_SHADOW_INIT)
         changed = True
 
     if not changed:

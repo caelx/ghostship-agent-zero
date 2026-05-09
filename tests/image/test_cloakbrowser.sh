@@ -70,13 +70,13 @@ async def smoke() -> None:
     expected_profile_root = "/root/.cache/ghostship-agent-zero/browser/profiles"
     for expected in (
         "# Ghostship CloakBrowser masquerade patch v3",
-        "# Ghostship delay open shadow DOM patch",
-        "globalThis.setTimeout(install, 20000)",
+        "# Ghostship disabled open shadow DOM init patch",
         expected_profile_root,
     ):
         if expected not in runtime_source:
             raise AssertionError(f"missing patched runtime source marker: {expected}")
     for forbidden in (
+        "add_init_script(self._shadow_dom_script())",
         "launch_persistent_context_async",
         "ensure_ghostship_browser_extensions",
         "set_browser_extension_enabled",

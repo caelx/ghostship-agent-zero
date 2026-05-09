@@ -16,7 +16,7 @@
 - uBlock Origin Lite tests should assert blocked network requests, not MV3 service-worker visibility.
 - Persist only `/a0/usr` and `/root`; do not add custom XDG/runtime path plumbing.
 - CloakBrowser profiles persist under `/root/.cache/ghostship-agent-zero/browser/profiles`.
-- Agent Zero's open-shadow-DOM Browser helper patch is delayed until 20 seconds after page load.
+- Agent Zero's open-shadow-DOM Browser helper init patch is disabled.
 - Do not leave Ghostship helper scripts in the final image unless runtime behavior truly requires them.
 - Work in feature branches with pull requests; do not merge until PR CI passes.
 - Keep changes surgical so upstream Agent Zero updates stay easy to adopt.
