@@ -6,6 +6,10 @@
 - Installed standalone provider plugins during the Ghostship image build and restored provider API key passthrough for runtime use.
 - Moved Bitwarden CLI/MCP setup out of this Docker overlay and into the standalone `a0-bitwarden-plugin`, installed by the image build through Agent Zero's Git plugin installer.
 - Improved CI build speed by allowing stable Docker install layers to reuse BuildKit cache.
+- Replaced Ghostship's Docker-time CloakBrowser runtime patch with the public CloakBrowser Agent Zero plugin installed through Agent Zero's plugin installer.
+- Removed Ghostship-owned CloakBrowser Playwright shim, runtime patcher, Playwright seeding, and staged browser-extension scripts.
+- Updated image tests to validate the plugin-owned CloakBrowser setup, launch path, managed extensions, and 1920x1080 headed runtime.
+- Consolidated build-time Agent Zero plugin installation through shared install and setup helpers for Git-sourced plugins.
 
 ## 0.1.0 - 2026-05-06
 

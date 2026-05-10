@@ -6,21 +6,21 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 DOCKERFILE = ROOT / "Dockerfile"
-INSTALL_SCRIPT = ROOT / "scripts" / "install-agent-zero-plugin.py"
-SETUP_SCRIPT = ROOT / "scripts" / "setup-agent-zero-plugin.sh"
-PLUGIN_REPO = "https://github.com/caelx/a0-bitwarden-plugin.git"
+SCRIPTS = ROOT / "scripts"
+INSTALL_SCRIPT = SCRIPTS / "install-agent-zero-plugin.py"
+SETUP_SCRIPT = SCRIPTS / "setup-agent-zero-plugin.sh"
+PLUGIN_REPO = "https://github.com/caelx/a0-cloakbrowser-plugin.git"
 
 
 def test_dockerfile_uses_agent_zero_plugin_installer() -> None:
     source = DOCKERFILE.read_text(encoding="utf-8")
     required = (
-        f"ARG BITWARDEN_PLUGIN_REPO={PLUGIN_REPO}",
-        "BITWARDEN_PLUGIN_REPO=${BITWARDEN_PLUGIN_REPO}",
-        "/tmp/ghostship/setup-agent-zero-plugin.sh bitwarden BITWARDEN_PLUGIN_REPO",
+        f"ARG CLOAKBROWSER_PLUGIN_REPO={PLUGIN_REPO}",
+        "/tmp/ghostship/setup-agent-zero-plugin.sh cloakbrowser CLOAKBROWSER_PLUGIN_REPO",
     )
     for snippet in required:
         if snippet not in source:
-            raise AssertionError(f"Dockerfile missing Bitwarden plugin install snippet: {snippet}")
+            raise AssertionError(f"Dockerfile missing plugin install snippet: {snippet}")
 
 
 def test_plugin_install_script_uses_agent_zero_plugin_installer() -> None:
@@ -31,6 +31,7 @@ def test_plugin_install_script_uses_agent_zero_plugin_installer() -> None:
         "parser.add_argument(\"repo_env\")",
         "repo = os.environ[args.repo_env]",
         "install_from_git(repo, plugin_name=args.plugin_name)",
+        "plugin_dir = plugins.find_plugin_dir(args.plugin_name)",
         "print(plugin_dir)",
     )
     for snippet in required:
@@ -59,24 +60,49 @@ def test_plugin_setup_script_materializes_agent_zero_user_plugin() -> None:
             raise AssertionError(f"plugin setup script missing snippet: {snippet}")
 
 
-def test_dockerfile_does_not_directly_seed_bitwarden_mcp() -> None:
+def test_dockerfile_no_longer_patches_agent_zero_browser_runtime() -> None:
     source = DOCKERFILE.read_text(encoding="utf-8")
     forbidden = (
-        "A0_SET_mcp_servers",
-        "seed-bitwarden-mcp-settings.py",
-        "npm install -g @bitwarden/cli @bitwarden/mcp-server",
+        "patch-browser-runtime.py",
+        "ghostship_cloakbrowser_playwright_shim",
+        "install-playwright-cloakbrowser.sh",
+        "seed-cloakbrowser-playwright.py",
+        "seed-browser-extensions.py",
+        "install-ublock-origin-lite.py",
+        "install-chrome-web-store-extension.py",
+        "/opt/ghostship",
+        "/plugins/_browser/helpers/runtime.py",
     )
     for snippet in forbidden:
         if snippet in source:
-            raise AssertionError(f"Dockerfile still contains direct Bitwarden setup: {snippet}")
+            raise AssertionError(f"Dockerfile still contains obsolete CloakBrowser patch path: {snippet}")
+
+
+def test_no_ghostship_cloakbrowser_patch_scripts_remain() -> None:
+    forbidden_files = (
+        "patch-browser-runtime.py",
+        "ghostship_cloakbrowser_playwright_shim.py",
+        "install-playwright-cloakbrowser.sh",
+        "seed-cloakbrowser-playwright.py",
+        "seed-browser-extensions.py",
+        "install-ublock-origin-lite.py",
+        "install-chrome-web-store-extension.py",
+        "ensure-cloakbrowser-plugin.py",
+        "install-cloakbrowser-plugin.py",
+    )
+    for name in forbidden_files:
+        path = SCRIPTS / name
+        if path.exists():
+            raise AssertionError(f"obsolete CloakBrowser helper still exists: {path}")
 
 
 def main() -> int:
     test_dockerfile_uses_agent_zero_plugin_installer()
     test_plugin_install_script_uses_agent_zero_plugin_installer()
     test_plugin_setup_script_materializes_agent_zero_user_plugin()
-    test_dockerfile_does_not_directly_seed_bitwarden_mcp()
-    print("Bitwarden plugin install tests passed")
+    test_dockerfile_no_longer_patches_agent_zero_browser_runtime()
+    test_no_ghostship_cloakbrowser_patch_scripts_remain()
+    print("CloakBrowser plugin install tests passed")
     return 0
 
 

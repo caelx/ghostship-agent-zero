@@ -6,7 +6,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 DOCKERFILE = ROOT / "Dockerfile"
-INSTALL_SCRIPT = ROOT / "scripts" / "install-provider-plugins.py"
+INSTALL_SCRIPT = ROOT / "scripts" / "install-agent-zero-plugin.py"
+SETUP_SCRIPT = ROOT / "scripts" / "setup-agent-zero-plugin.sh"
 
 PROVIDERS = {
     "provider_ollama_cloud": "https://github.com/caelx/a0-ollama-cloud-provider-plugin.git",
@@ -20,12 +21,16 @@ PROVIDERS = {
 def test_dockerfile_installs_provider_plugins_from_git() -> None:
     source = DOCKERFILE.read_text(encoding="utf-8")
     required = (
-        "/tmp/ghostship/install-provider-plugins.py",
         "OLLAMA_CLOUD_PROVIDER_PLUGIN_REPO",
         "OPENCODE_GO_PROVIDER_PLUGIN_REPO",
         "NVIDIA_BUILD_FREE_PROVIDER_PLUGIN_REPO",
         "OPENCODE_ZEN_FREE_PROVIDER_PLUGIN_REPO",
         "OPENROUTER_FREE_PROVIDER_PLUGIN_REPO",
+        "/tmp/ghostship/setup-agent-zero-plugin.sh provider_ollama_cloud OLLAMA_CLOUD_PROVIDER_PLUGIN_REPO",
+        "/tmp/ghostship/setup-agent-zero-plugin.sh provider_opencode_go OPENCODE_GO_PROVIDER_PLUGIN_REPO",
+        "/tmp/ghostship/setup-agent-zero-plugin.sh provider_nvidia_build_free NVIDIA_BUILD_FREE_PROVIDER_PLUGIN_REPO",
+        "/tmp/ghostship/setup-agent-zero-plugin.sh provider_opencode_zen_free OPENCODE_ZEN_FREE_PROVIDER_PLUGIN_REPO",
+        "/tmp/ghostship/setup-agent-zero-plugin.sh provider_openrouter_free OPENROUTER_FREE_PROVIDER_PLUGIN_REPO",
     )
     for snippet in required:
         if snippet not in source:
@@ -36,21 +41,46 @@ def test_provider_install_script_uses_agent_zero_plugin_installer() -> None:
     source = INSTALL_SCRIPT.read_text(encoding="utf-8")
     required = (
         "from plugins._plugin_installer.helpers.install import install_from_git",
-        "remove_existing_plugin(plugin_name)",
-        "shutil.rmtree(path)",
-        "install_from_git(repo, plugin_name=plugin_name)",
-        "plugins.find_plugin_dir(plugin_name)",
-        "DEFAULT_PLUGIN_ROOT = Path(\"/git/agent-zero/usr/plugins\")",
-        "USER_PLUGIN_ROOT = Path(\"/a0/usr/plugins\")",
+        "parser.add_argument(\"plugin_name\")",
+        "parser.add_argument(\"repo_env\")",
+        "repo = os.environ[args.repo_env]",
+        "install_from_git(repo, plugin_name=args.plugin_name)",
+        "plugin_dir = plugins.find_plugin_dir(args.plugin_name)",
+        "print(plugin_dir)",
     )
     for snippet in required:
         if snippet not in source:
             raise AssertionError(f"provider install script missing snippet: {snippet}")
+    forbidden = (
+        "if plugin_dir:\n        print(plugin_dir)\n        return 0",
+        "if plugin_dir:\r\n        print(plugin_dir)\r\n        return 0",
+    )
+    for snippet in forbidden:
+        if snippet in source:
+            raise AssertionError("plugin install script must install the configured repo even when a plugin exists")
+
+
+def test_provider_repos_are_configured_as_build_args() -> None:
+    source = DOCKERFILE.read_text(encoding="utf-8")
     for plugin_name, repo in PROVIDERS.items():
         if plugin_name not in source:
-            raise AssertionError(f"provider install script missing plugin: {plugin_name}")
+            raise AssertionError(f"Dockerfile missing provider setup: {plugin_name}")
         if repo not in source:
-            raise AssertionError(f"provider install script missing repo: {repo}")
+            raise AssertionError(f"Dockerfile missing provider repo: {repo}")
+
+
+def test_setup_script_supports_plugins_without_execute_hook() -> None:
+    source = SETUP_SCRIPT.read_text(encoding="utf-8")
+    required = (
+        'plugin_dir="$(cd /a0 && /opt/venv-a0/bin/python /tmp/ghostship/install-agent-zero-plugin.py "$plugin_name" "$repo_env")"',
+        "if [ -f execute.py ]; then",
+        '/opt/venv-a0/bin/python execute.py "$@"',
+        'target="/a0/usr/plugins/$plugin_name"',
+        'cp -a "$plugin_dir" "$target"',
+    )
+    for snippet in required:
+        if snippet not in source:
+            raise AssertionError(f"plugin setup script missing provider-compatible snippet: {snippet}")
 
 
 def test_no_bundled_provider_plugin_sources_remain() -> None:
@@ -65,6 +95,8 @@ def test_no_bundled_provider_plugin_sources_remain() -> None:
 def main() -> int:
     test_dockerfile_installs_provider_plugins_from_git()
     test_provider_install_script_uses_agent_zero_plugin_installer()
+    test_provider_repos_are_configured_as_build_args()
+    test_setup_script_supports_plugins_without_execute_hook()
     test_no_bundled_provider_plugin_sources_remain()
     print("provider plugin install tests passed")
     return 0
