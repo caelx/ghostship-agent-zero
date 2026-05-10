@@ -12,7 +12,6 @@
 - Image tests should focus on installed tools and real patched browser behavior.
 - Staged uBlock Origin Lite lives at `/opt/ghostship/ublock-origin-lite`; startup migration copies/enables it through Agent Zero's extension manager.
 - Staged "I still don't care about cookies" lives at `/opt/ghostship/i-still-dont-care-about-cookies` and uses the same startup extension-manager path.
-- Bitwarden MCP is seeded into Agent Zero settings with `mcp-server-bitwarden`; use `BW_CLIENT_ID` and `BW_CLIENT_SECRET`.
 - uBlock Origin Lite tests should assert blocked network requests, not MV3 service-worker visibility.
 - Persist only `/a0/usr` and `/root`; do not add custom XDG/runtime path plumbing.
 - Browser profiles use Agent Zero's upstream `tmp/browser/sessions` path.

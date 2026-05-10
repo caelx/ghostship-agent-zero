@@ -5,8 +5,7 @@ Thin Docker image customization for Agent Zero with Ghostship tooling, CloakBrow
 ## What This Image Adds
 
 - Uses `agent0ai/agent-zero:latest` as the baseline.
-- Installs the global agent tool baseline: `bw`, `mcp-server-bitwarden`, `gh`, `git`, `openssh-client`, `curl`, `wget`, `ca-certificates`, `jq`, `yq`, `rg`, `fd`, `python3`, `pip`, `uv`, `nodejs`, `npm`, `npx`, `corepack`, `nix`, `make`, `just`, `bash`, `tar`, `gzip`, `xz`, `zstd`, `zip`, `unzip`, `7zip`, `file`, `less`, `tree`, `tmux`, `pre-commit`, `gitleaks`, `trufflehog`, `git-secrets`, `git-filter-repo`, `shellcheck`, `shfmt`, and `actionlint`.
-- Seeds Bitwarden MCP into Agent Zero's external MCP server settings.
+- Installs the global agent tool baseline: `gh`, `git`, `openssh-client`, `curl`, `wget`, `ca-certificates`, `jq`, `yq`, `rg`, `fd`, `python3`, `pip`, `uv`, `nodejs`, `npm`, `npx`, `corepack`, `nix`, `make`, `just`, `bash`, `tar`, `gzip`, `xz`, `zstd`, `zip`, `unzip`, `7zip`, `file`, `less`, `tree`, `tmux`, `pre-commit`, `gitleaks`, `trufflehog`, `git-secrets`, `git-filter-repo`, `shellcheck`, `shfmt`, and `actionlint`.
 - Installs CloakBrowser as a transparent headed replacement behind Agent Zero's normal Playwright Browser path, filtering unwanted Chromium args and injecting CloakBrowser stealth/humanize/geoip/fingerprint behavior at the Playwright boundary.
 - Uses Agent Zero's upstream Browser profile paths under `tmp/browser/sessions`.
 - Disables Agent Zero's open-shadow-DOM Browser helper init patch so page shadow-root mode is not rewritten.
@@ -45,14 +44,6 @@ docker compose up
 The Agent Zero UI is exposed at `http://localhost:50080`.
 
 ## Environment
-
-Copy `.env.example` to `.env` and set these values if you want agents to use Bitwarden non-interactively:
-
-- `BW_CLIENT_ID`
-- `BW_CLIENT_SECRET`
-- `BW_PASSWORD`
-
-`BW_SESSION` is not treated as durable configuration. It is an ephemeral Bitwarden unlock session key used by the Bitwarden CLI and MCP server.
 
 `GH_PROMPT_DISABLED=1` is baked into the image so GitHub CLI commands avoid interactive prompts.
 

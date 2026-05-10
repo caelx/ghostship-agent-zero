@@ -5,8 +5,7 @@ FROM agent0ai/agent-zero:latest
 ENV CLOAKBROWSER_CACHE_DIR=/opt/cloakbrowser \
     CLOAKBROWSER_AUTO_UPDATE=false \
     DISPLAY=:99 \
-    GH_PROMPT_DISABLED=1 \
-    A0_SET_mcp_servers='{"mcpServers":{"bitwarden":{"type":"stdio","command":"mcp-server-bitwarden","args":[],"disabled":false}}}'
+    GH_PROMPT_DISABLED=1
 
 ENV PATH=/nix/var/nix/profiles/default/bin:$PATH
 
@@ -98,11 +97,9 @@ RUN /tmp/ghostship/patch-browser-runtime.py /git/agent-zero/plugins/_browser/hel
     && cp -a /tmp/ghostship-plugins/. /git/agent-zero/usr/plugins/ \
     && cp -a /tmp/ghostship-plugins/. /a0/usr/plugins/ \
     && mkdir -p /git/agent-zero/extensions/python/startup_migration \
-    && cp /tmp/ghostship/seed-bitwarden-mcp-settings.py /git/agent-zero/extensions/python/startup_migration/_05_seed_bitwarden_mcp_settings.py \
     && cp /tmp/ghostship/seed-cloakbrowser-playwright.py /git/agent-zero/extensions/python/startup_migration/_06_seed_cloakbrowser_playwright.py \
     && cp /tmp/ghostship/seed-browser-extensions.py /git/agent-zero/extensions/python/startup_migration/_07_seed_browser_extensions.py \
     && if [ -d /a0/extensions/python/startup_migration ]; then \
-      cp /tmp/ghostship/seed-bitwarden-mcp-settings.py /a0/extensions/python/startup_migration/_05_seed_bitwarden_mcp_settings.py; \
       cp /tmp/ghostship/seed-cloakbrowser-playwright.py /a0/extensions/python/startup_migration/_06_seed_cloakbrowser_playwright.py; \
       cp /tmp/ghostship/seed-browser-extensions.py /a0/extensions/python/startup_migration/_07_seed_browser_extensions.py; \
     fi \
