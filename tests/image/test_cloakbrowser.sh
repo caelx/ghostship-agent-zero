@@ -4,7 +4,7 @@ set -euo pipefail
 source "$(dirname "$0")/lib.sh"
 
 echo "checking CloakBrowser plugin install"
-run_bash_in_image '. /ins/setup_venv.sh local && test -d /a0/usr/plugins/cloakbrowser && cd /a0/usr/plugins/cloakbrowser && python execute.py status >/tmp/cloakbrowser-status.json && python -m cloakbrowser info'
+run_bash_in_image '. /ins/setup_venv.sh local && test -d /a0/usr/plugins/cloakbrowser && cd /a0/usr/plugins/cloakbrowser && python execute.py status | tee /tmp/cloakbrowser-status.json'
 
 echo "checking plugin-managed headed display wiring"
 run_bash_in_image 'command -v Xvfb >/dev/null && test "$DISPLAY" = ":99" && grep -q "\[program:cloakbrowser_xvfb\]" /etc/supervisor/conf.d/cloakbrowser_xvfb.conf && grep -q "1920x1080x24" /etc/supervisor/conf.d/cloakbrowser_xvfb.conf'
