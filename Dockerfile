@@ -2,10 +2,21 @@
 
 FROM agent0ai/agent-zero:latest
 
+ARG OLLAMA_CLOUD_PROVIDER_PLUGIN_REPO=https://github.com/caelx/a0-ollama-cloud-provider-plugin.git
+ARG OPENCODE_GO_PROVIDER_PLUGIN_REPO=https://github.com/caelx/a0-opencode-go-provider-plugin.git
+ARG NVIDIA_BUILD_FREE_PROVIDER_PLUGIN_REPO=https://github.com/caelx/a0-nvidia-build-free-provider-plugin.git
+ARG OPENCODE_ZEN_FREE_PROVIDER_PLUGIN_REPO=https://github.com/caelx/a0-opencode-zen-free-provider-plugin.git
+ARG OPENROUTER_FREE_PROVIDER_PLUGIN_REPO=https://github.com/caelx/a0-openrouter-free-provider-plugin.git
+
 ENV CLOAKBROWSER_CACHE_DIR=/opt/cloakbrowser \
     CLOAKBROWSER_AUTO_UPDATE=false \
     DISPLAY=:99 \
     GH_PROMPT_DISABLED=1 \
+    OLLAMA_CLOUD_PROVIDER_PLUGIN_REPO=${OLLAMA_CLOUD_PROVIDER_PLUGIN_REPO} \
+    OPENCODE_GO_PROVIDER_PLUGIN_REPO=${OPENCODE_GO_PROVIDER_PLUGIN_REPO} \
+    NVIDIA_BUILD_FREE_PROVIDER_PLUGIN_REPO=${NVIDIA_BUILD_FREE_PROVIDER_PLUGIN_REPO} \
+    OPENCODE_ZEN_FREE_PROVIDER_PLUGIN_REPO=${OPENCODE_ZEN_FREE_PROVIDER_PLUGIN_REPO} \
+    OPENROUTER_FREE_PROVIDER_PLUGIN_REPO=${OPENROUTER_FREE_PROVIDER_PLUGIN_REPO} \
     A0_SET_mcp_servers='{"mcpServers":{"bitwarden":{"type":"stdio","command":"mcp-server-bitwarden","args":[],"disabled":false}}}'
 
 ENV PATH=/nix/var/nix/profiles/default/bin:$PATH
@@ -27,6 +38,8 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 RUN /tmp/ghostship/install-tools.sh github
 
 RUN /tmp/ghostship/install-tools.sh nix
+
+RUN /opt/venv-a0/bin/python /tmp/ghostship/install-provider-plugins.py
 
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,target=/var/lib/apt/lists,sharing=locked \

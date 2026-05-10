@@ -30,6 +30,7 @@ jobs:
         run: |
           python3 tests/test_browser_runtime_patch.py
           python3 tests/test_bitwarden_mcp_settings.py
+          python3 tests/test_provider_plugin_install.py
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3

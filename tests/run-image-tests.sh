@@ -10,5 +10,6 @@ fi
 
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
+"$root/tests/image/test_provider_plugins.sh" "$image"
 "$root/tests/image/test_tools.sh" "$image"
 "$root/tests/image/test_cloakbrowser.sh" "$image"

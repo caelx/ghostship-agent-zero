@@ -11,7 +11,7 @@ Thin Docker image customization for Agent Zero with Ghostship tooling, CloakBrow
 - Uses Agent Zero's upstream Browser profile paths under `tmp/browser/sessions`.
 - Disables Agent Zero's open-shadow-DOM Browser helper init patch so page shadow-root mode is not rewritten.
 - Stages the latest uBlock Origin Lite and "I still don't care about cookies" extensions and seeds Agent Zero's Browser extension manager to enable them at startup.
-- Provider plugins are maintained as standalone Agent Zero plugin repositories.
+- Installs provider plugins for Ollama Cloud, OpenCode Go, NVIDIA Build Free, OpenCode Zen Free, and OpenRouter Free from standalone Agent Zero plugin repositories.
 - Uses Docker layer caching so stable tool and browser install layers are reused across CI builds.
 - Leaves no Ghostship build helper scripts in the final image.
 
@@ -56,15 +56,31 @@ Copy `.env.example` to `.env` and set these values if you want agents to use Bit
 
 `GH_PROMPT_DISABLED=1` is baked into the image so GitHub CLI commands avoid interactive prompts.
 
-Optional Agent Zero provider plugins are now installed from their standalone repositories:
+Agent Zero provider plugins are installed during the image build from their standalone repositories:
 
-- `git@github.com:caelx/a0-ollama-cloud-provider-plugin.git`
-- `git@github.com:caelx/a0-opencode-go-provider-plugin.git`
-- `git@github.com:caelx/a0-nvidia-build-free-provider-plugin.git`
-- `git@github.com:caelx/a0-opencode-zen-free-provider-plugin.git`
-- `git@github.com:caelx/a0-openrouter-free-provider-plugin.git`
+- `https://github.com/caelx/a0-ollama-cloud-provider-plugin.git`
+- `https://github.com/caelx/a0-opencode-go-provider-plugin.git`
+- `https://github.com/caelx/a0-nvidia-build-free-provider-plugin.git`
+- `https://github.com/caelx/a0-opencode-zen-free-provider-plugin.git`
+- `https://github.com/caelx/a0-openrouter-free-provider-plugin.git`
 
 Each provider repo documents its required API key environment variable and CI secrets.
+
+The default provider plugin repositories can be overridden at build time with:
+
+- `OLLAMA_CLOUD_PROVIDER_PLUGIN_REPO`
+- `OPENCODE_GO_PROVIDER_PLUGIN_REPO`
+- `NVIDIA_BUILD_FREE_PROVIDER_PLUGIN_REPO`
+- `OPENCODE_ZEN_FREE_PROVIDER_PLUGIN_REPO`
+- `OPENROUTER_FREE_PROVIDER_PLUGIN_REPO`
+
+To use the installed providers at runtime, pass the corresponding provider API keys through the Compose environment:
+
+- `OLLAMA_CLOUD_API_KEY`
+- `OPENCODE_GO_API_KEY`
+- `NVIDIA_BUILD_FREE_API_KEY`
+- `OPENCODE_ZEN_FREE_API_KEY`
+- `OPENROUTER_FREE_API_KEY`
 
 ## CI And Images
 

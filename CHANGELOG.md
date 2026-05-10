@@ -3,7 +3,7 @@
 ## Unreleased
 
 - Moved Agent Zero provider plugins for Ollama Cloud, OpenCode Go, NVIDIA Build Free, OpenCode Zen Free, and OpenRouter Free into standalone plugin repositories.
-- Removed bundled provider API key environment variables from the example environment and Compose service.
+- Installed standalone provider plugins during the Ghostship image build and restored provider API key passthrough for runtime use.
 - Improved CI build speed by allowing stable Docker install layers to reuse BuildKit cache.
 
 ## 0.1.0 - 2026-05-06
