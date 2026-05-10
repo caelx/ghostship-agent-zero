@@ -4,13 +4,13 @@ set -euo pipefail
 source "$(dirname "$0")/lib.sh"
 
 echo "checking CloakBrowser plugin install"
-run_bash_in_image '. /ins/setup_venv.sh local && test -d /a0/usr/plugins/cloakbrowser && cd /a0/usr/plugins/cloakbrowser && python execute.py status | tee /tmp/cloakbrowser-status.json'
+run_bash_in_image '. /ins/setup_venv.sh local && test -d /a0/usr/plugins/cloakbrowser && cd /a0/usr/plugins/cloakbrowser && python execute.py status --json | tee /tmp/cloakbrowser-status.json'
 
 echo "checking plugin-managed headed display wiring"
 run_bash_in_image 'command -v Xvfb >/dev/null && test "$DISPLAY" = ":99" && grep -q "\[program:cloakbrowser_xvfb\]" /etc/supervisor/conf.d/cloakbrowser_xvfb.conf && grep -q "1920x1080x24" /etc/supervisor/conf.d/cloakbrowser_xvfb.conf'
 
 echo "checking Ghostship no longer installs runtime patch artifacts"
-run_bash_in_image '. /ins/setup_venv.sh local && cd /a0/usr/plugins/cloakbrowser && python execute.py status >/tmp/cloakbrowser-status.json && cd /a0 && PYTHONPATH=/git/agent-zero python - <<'"'"'PY'"'"'
+run_bash_in_image '. /ins/setup_venv.sh local && cd /a0/usr/plugins/cloakbrowser && python execute.py status --json >/tmp/cloakbrowser-status.json && cd /a0 && PYTHONPATH=/git/agent-zero python - <<'"'"'PY'"'"'
 import inspect
 import json
 import site
@@ -148,15 +148,26 @@ async def check_runtime() -> None:
         if not commands:
             raise AssertionError(f"could not find Chromium process for profile: {core.profile_dir}")
         joined_commands = "\n".join(commands)
+        main_commands = [command for command in commands if " --type=" not in f" {command} "]
+        if len(main_commands) != 1:
+            raise AssertionError(f"expected one top-level browser process, found {len(main_commands)}: {joined_commands}")
+        main_command = main_commands[0]
         if "cloakbrowser" not in joined_commands.lower():
             raise AssertionError(f"browser process does not look like CloakBrowser: {joined_commands}")
-        for forbidden_arg in ("--disable-gpu", "--disable-dev-shm-usage", "--disable-extensions"):
-            if f" {forbidden_arg} " in f" {joined_commands} ":
-                raise AssertionError(f"CloakBrowser plugin did not filter {forbidden_arg}: {joined_commands}")
-        if "--headless" in joined_commands:
-            raise AssertionError(f"CloakBrowser plugin did not force headed mode: {joined_commands}")
+        for forbidden_arg in ("--disable-gpu", "--disable-extensions"):
+            if f" {forbidden_arg} " in f" {main_command} ":
+                raise AssertionError(f"CloakBrowser plugin did not filter {forbidden_arg}: {main_command}")
+        if main_command.count("--disable-dev-shm-usage") != 1:
+            raise AssertionError(f"CloakBrowser launch should keep one /dev/shm fallback switch: {main_command}")
+        if main_command.count("--no-sandbox") != 1:
+            raise AssertionError(f"CloakBrowser launch should keep one root-safe sandbox switch: {main_command}")
+        if "--headless" in main_command:
+            raise AssertionError(f"CloakBrowser plugin did not force headed mode: {main_command}")
 
         launch = shim_status().get("last_launch", {})
+        shared_memory = launch.get("shared_memory", {})
+        if not shared_memory.get("disable_dev_shm_usage"):
+            raise AssertionError(f"CloakBrowser shared-memory fallback is not active: {launch}")
         final_args = launch.get("final_args", [])
         for required in (
             "--fingerprint",

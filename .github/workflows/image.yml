@@ -35,6 +35,22 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
+      - name: Resolve plugin revisions
+        id: plugin-revisions
+        run: |
+          resolve() {
+            git ls-remote "$1" HEAD | awk '{print $1}'
+          }
+          {
+            echo "bitwarden=$(resolve https://github.com/caelx/a0-bitwarden-plugin.git)"
+            echo "cloakbrowser=$(resolve https://github.com/caelx/a0-cloakbrowser-plugin.git)"
+            echo "ollama_cloud=$(resolve https://github.com/caelx/a0-ollama-cloud-provider-plugin.git)"
+            echo "opencode_go=$(resolve https://github.com/caelx/a0-opencode-go-provider-plugin.git)"
+            echo "nvidia_build_free=$(resolve https://github.com/caelx/a0-nvidia-build-free-provider-plugin.git)"
+            echo "opencode_zen_free=$(resolve https://github.com/caelx/a0-opencode-zen-free-provider-plugin.git)"
+            echo "openrouter_free=$(resolve https://github.com/caelx/a0-openrouter-free-provider-plugin.git)"
+          } >> "$GITHUB_OUTPUT"
+
       - name: Prepare runner disk space
         run: |
           # The Agent Zero base image is large enough that Docker load has
@@ -59,6 +75,14 @@ jobs:
           tags: |
             ${{ env.TEST_IMAGE }}
             ${{ env.REGISTRY_IMAGE }}:amd64-${{ github.sha }}
+          build-args: |
+            BITWARDEN_PLUGIN_REV=${{ steps.plugin-revisions.outputs.bitwarden }}
+            CLOAKBROWSER_PLUGIN_REV=${{ steps.plugin-revisions.outputs.cloakbrowser }}
+            OLLAMA_CLOUD_PROVIDER_PLUGIN_REV=${{ steps.plugin-revisions.outputs.ollama_cloud }}
+            OPENCODE_GO_PROVIDER_PLUGIN_REV=${{ steps.plugin-revisions.outputs.opencode_go }}
+            NVIDIA_BUILD_FREE_PROVIDER_PLUGIN_REV=${{ steps.plugin-revisions.outputs.nvidia_build_free }}
+            OPENCODE_ZEN_FREE_PROVIDER_PLUGIN_REV=${{ steps.plugin-revisions.outputs.opencode_zen_free }}
+            OPENROUTER_FREE_PROVIDER_PLUGIN_REV=${{ steps.plugin-revisions.outputs.openrouter_free }}
           cache-from: type=gha,scope=agent-zero-amd64
           cache-to: type=gha,scope=agent-zero-amd64,mode=max
 
@@ -90,6 +114,22 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
+      - name: Resolve plugin revisions
+        id: plugin-revisions
+        run: |
+          resolve() {
+            git ls-remote "$1" HEAD | awk '{print $1}'
+          }
+          {
+            echo "bitwarden=$(resolve https://github.com/caelx/a0-bitwarden-plugin.git)"
+            echo "cloakbrowser=$(resolve https://github.com/caelx/a0-cloakbrowser-plugin.git)"
+            echo "ollama_cloud=$(resolve https://github.com/caelx/a0-ollama-cloud-provider-plugin.git)"
+            echo "opencode_go=$(resolve https://github.com/caelx/a0-opencode-go-provider-plugin.git)"
+            echo "nvidia_build_free=$(resolve https://github.com/caelx/a0-nvidia-build-free-provider-plugin.git)"
+            echo "opencode_zen_free=$(resolve https://github.com/caelx/a0-opencode-zen-free-provider-plugin.git)"
+            echo "openrouter_free=$(resolve https://github.com/caelx/a0-openrouter-free-provider-plugin.git)"
+          } >> "$GITHUB_OUTPUT"
+
       - name: Prepare runner disk space
         run: |
           # The Agent Zero base image is large enough that Docker load has
@@ -120,6 +160,14 @@ jobs:
           platforms: linux/arm64
           push: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
           tags: ${{ env.REGISTRY_IMAGE }}:arm64-${{ github.sha }}
+          build-args: |
+            BITWARDEN_PLUGIN_REV=${{ steps.plugin-revisions.outputs.bitwarden }}
+            CLOAKBROWSER_PLUGIN_REV=${{ steps.plugin-revisions.outputs.cloakbrowser }}
+            OLLAMA_CLOUD_PROVIDER_PLUGIN_REV=${{ steps.plugin-revisions.outputs.ollama_cloud }}
+            OPENCODE_GO_PROVIDER_PLUGIN_REV=${{ steps.plugin-revisions.outputs.opencode_go }}
+            NVIDIA_BUILD_FREE_PROVIDER_PLUGIN_REV=${{ steps.plugin-revisions.outputs.nvidia_build_free }}
+            OPENCODE_ZEN_FREE_PROVIDER_PLUGIN_REV=${{ steps.plugin-revisions.outputs.opencode_zen_free }}
+            OPENROUTER_FREE_PROVIDER_PLUGIN_REV=${{ steps.plugin-revisions.outputs.openrouter_free }}
           cache-from: type=gha,scope=agent-zero-arm64
           cache-to: type=gha,scope=agent-zero-arm64,mode=max
 
