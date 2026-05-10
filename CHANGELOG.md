@@ -4,6 +4,7 @@
 
 - Moved Agent Zero provider plugins for Ollama Cloud, OpenCode Go, NVIDIA Build Free, OpenCode Zen Free, and OpenRouter Free into standalone plugin repositories.
 - Installed standalone provider plugins during the Ghostship image build and restored provider API key passthrough for runtime use.
+- Moved Bitwarden CLI/MCP setup out of this Docker overlay and into the standalone `a0-bitwarden-plugin`, installed by the image build through Agent Zero's Git plugin installer.
 - Improved CI build speed by allowing stable Docker install layers to reuse BuildKit cache.
 
 ## 0.1.0 - 2026-05-06
