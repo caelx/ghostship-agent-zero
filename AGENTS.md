@@ -18,5 +18,6 @@
 - CloakBrowser runs headed under Xvfb on `DISPLAY=:99`; do not add VNC/Desktop mode.
 - Agent Zero's open-shadow-DOM Browser helper init patch is disabled.
 - Do not leave Ghostship helper scripts in the final image unless runtime behavior truly requires them.
+- Bitwarden is installed through `a0-bitwarden-plugin` from its Git URL; do not re-add direct npm/MCP seeding here.
 - Work in feature branches with pull requests; do not merge until PR CI passes.
 - Keep changes surgical so upstream Agent Zero updates stay easy to adopt.
