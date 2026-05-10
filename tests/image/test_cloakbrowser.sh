@@ -10,7 +10,7 @@ echo "checking plugin-managed headed display wiring"
 run_bash_in_image 'command -v Xvfb >/dev/null && test "$DISPLAY" = ":99" && grep -q "\[program:cloakbrowser_xvfb\]" /etc/supervisor/conf.d/cloakbrowser_xvfb.conf && grep -q "1920x1080x24" /etc/supervisor/conf.d/cloakbrowser_xvfb.conf'
 
 echo "checking Ghostship no longer installs runtime patch artifacts"
-run_bash_in_image '. /ins/setup_venv.sh local && cd /a0/usr/plugins/cloakbrowser && python execute.py status >/tmp/cloakbrowser-status.json && PYTHONPATH=/git/agent-zero python - <<'"'"'PY'"'"'
+run_bash_in_image '. /ins/setup_venv.sh local && cd /a0/usr/plugins/cloakbrowser && python execute.py status >/tmp/cloakbrowser-status.json && cd /a0 && PYTHONPATH=/git/agent-zero python - <<'"'"'PY'"'"'
 import inspect
 import json
 import site
