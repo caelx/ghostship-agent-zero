@@ -12,12 +12,12 @@
 - Image tests should focus on installed tools and real patched browser behavior.
 - Staged uBlock Origin Lite lives at `/opt/ghostship/ublock-origin-lite`; startup migration copies/enables it through Agent Zero's extension manager.
 - Staged "I still don't care about cookies" lives at `/opt/ghostship/i-still-dont-care-about-cookies` and uses the same startup extension-manager path.
-- Bitwarden MCP is seeded into Agent Zero settings with `mcp-server-bitwarden`; use `BW_CLIENT_ID` and `BW_CLIENT_SECRET`.
 - uBlock Origin Lite tests should assert blocked network requests, not MV3 service-worker visibility.
 - Persist only `/a0/usr` and `/root`; do not add custom XDG/runtime path plumbing.
 - Browser profiles use Agent Zero's upstream `tmp/browser/sessions` path.
 - CloakBrowser runs headed under Xvfb on `DISPLAY=:99`; do not add VNC/Desktop mode.
 - Agent Zero's open-shadow-DOM Browser helper init patch is disabled.
 - Do not leave Ghostship helper scripts in the final image unless runtime behavior truly requires them.
+- Bitwarden is installed through `a0-bitwarden-plugin` from its Git URL; do not re-add direct npm/MCP seeding here.
 - Work in feature branches with pull requests; do not merge until PR CI passes.
 - Keep changes surgical so upstream Agent Zero updates stay easy to adopt.

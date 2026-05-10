@@ -2,11 +2,13 @@
 
 FROM agent0ai/agent-zero:latest
 
+ARG BITWARDEN_PLUGIN_REPO=https://github.com/caelx/a0-bitwarden-plugin.git
+
 ENV CLOAKBROWSER_CACHE_DIR=/opt/cloakbrowser \
     CLOAKBROWSER_AUTO_UPDATE=false \
     DISPLAY=:99 \
     GH_PROMPT_DISABLED=1 \
-    A0_SET_mcp_servers='{"mcpServers":{"bitwarden":{"type":"stdio","command":"mcp-server-bitwarden","args":[],"disabled":false}}}'
+    BITWARDEN_PLUGIN_REPO=${BITWARDEN_PLUGIN_REPO}
 
 ENV PATH=/nix/var/nix/profiles/default/bin:$PATH
 
@@ -27,6 +29,16 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 RUN /tmp/ghostship/install-tools.sh github
 
 RUN /tmp/ghostship/install-tools.sh nix
+
+RUN --mount=type=cache,target=/root/.npm \
+    plugin_dir="$(cd /a0 && /opt/venv-a0/bin/python /tmp/ghostship/install-bitwarden-plugin.py)" \
+    && cd "$plugin_dir" \
+    && /opt/venv-a0/bin/python execute.py setup --noninteractive \
+    && mkdir -p /a0/usr/plugins \
+    && if [ "$plugin_dir" != "/a0/usr/plugins/bitwarden" ]; then \
+      rm -rf /a0/usr/plugins/bitwarden; \
+      cp -a "$plugin_dir" /a0/usr/plugins/bitwarden; \
+    fi
 
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,target=/var/lib/apt/lists,sharing=locked \
@@ -98,11 +110,9 @@ RUN /tmp/ghostship/patch-browser-runtime.py /git/agent-zero/plugins/_browser/hel
     && cp -a /tmp/ghostship-plugins/. /git/agent-zero/usr/plugins/ \
     && cp -a /tmp/ghostship-plugins/. /a0/usr/plugins/ \
     && mkdir -p /git/agent-zero/extensions/python/startup_migration \
-    && cp /tmp/ghostship/seed-bitwarden-mcp-settings.py /git/agent-zero/extensions/python/startup_migration/_05_seed_bitwarden_mcp_settings.py \
     && cp /tmp/ghostship/seed-cloakbrowser-playwright.py /git/agent-zero/extensions/python/startup_migration/_06_seed_cloakbrowser_playwright.py \
     && cp /tmp/ghostship/seed-browser-extensions.py /git/agent-zero/extensions/python/startup_migration/_07_seed_browser_extensions.py \
     && if [ -d /a0/extensions/python/startup_migration ]; then \
-      cp /tmp/ghostship/seed-bitwarden-mcp-settings.py /a0/extensions/python/startup_migration/_05_seed_bitwarden_mcp_settings.py; \
       cp /tmp/ghostship/seed-cloakbrowser-playwright.py /a0/extensions/python/startup_migration/_06_seed_cloakbrowser_playwright.py; \
       cp /tmp/ghostship/seed-browser-extensions.py /a0/extensions/python/startup_migration/_07_seed_browser_extensions.py; \
     fi \

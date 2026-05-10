@@ -15,7 +15,6 @@ check_bash() {
   run_bash_in_image "$*"
 }
 
-check bw bw --version
 check gh gh --version
 check git git --version
 check openssh-client ssh -V
@@ -37,8 +36,6 @@ check_bash nodejs-22 'test "$(node -p "process.versions.node.split(\".\")[0]")" 
 check npm npm --version
 check npx npx --version
 check corepack corepack --version
-check_bash bitwarden-mcp 'command -v mcp-server-bitwarden >/dev/null'
-
 check nix nix --extra-experimental-features "nix-command flakes" flake --help
 check make make --version
 check just just --version
@@ -67,17 +64,5 @@ check shfmt shfmt --version
 check actionlint actionlint --version
 
 check_bash GH_PROMPT_DISABLED 'test "${GH_PROMPT_DISABLED:-}" = "1"'
-check_bash bitwarden-mcp-default 'python3 - <<'"'"'PY'"'"'
-import json
-import os
-
-config = json.loads(os.environ["A0_SET_mcp_servers"])
-entry = config["mcpServers"]["bitwarden"]
-assert entry["type"] == "stdio"
-assert entry["command"] == "mcp-server-bitwarden"
-assert entry["args"] == []
-assert entry["disabled"] is False
-PY'
-check_bash no-bitwarden-wrapper '! command -v ghostship-bitwarden-mcp'
 check_bash no-custom-runtime-env '! env | grep -E "^(A0_RUNTIME_ROOT|XDG_CONFIG_HOME|XDG_DATA_HOME|XDG_STATE_HOME|XDG_CACHE_HOME|XDG_RUNTIME_DIR|GH_CONFIG_DIR|GIT_CONFIG_GLOBAL|RIPGREP_CONFIG_PATH|BITWARDENCLI_APPDATA_DIR)="'
 check_bash no-custom-runtime-dir 'test ! -e /a0/usr/.runtime'
