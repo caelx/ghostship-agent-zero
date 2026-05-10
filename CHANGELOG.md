@@ -10,7 +10,7 @@
 - Replaced Ghostship's Docker-time CloakBrowser runtime patch with the public CloakBrowser Agent Zero plugin installed through Agent Zero's plugin installer.
 - Removed Ghostship-owned CloakBrowser Playwright shim, runtime patcher, Playwright seeding, and staged browser-extension scripts.
 - Updated image tests to validate the plugin-owned CloakBrowser setup, launch path, managed extensions, and 1920x1080 headed runtime.
-- Consolidated build-time Agent Zero plugin installation through one generic helper for Git-sourced plugins.
+- Consolidated build-time Agent Zero plugin installation through shared install and setup helpers for Git-sourced plugins.
 
 ## 0.1.0 - 2026-05-06
 

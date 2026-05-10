@@ -33,26 +33,12 @@ RUN /tmp/ghostship/install-tools.sh github
 RUN /tmp/ghostship/install-tools.sh nix
 
 RUN --mount=type=cache,target=/root/.npm \
-    plugin_dir="$(cd /a0 && /opt/venv-a0/bin/python /tmp/ghostship/install-agent-zero-plugin.py bitwarden BITWARDEN_PLUGIN_REPO)" \
-    && cd "$plugin_dir" \
-    && /opt/venv-a0/bin/python execute.py setup --noninteractive \
-    && mkdir -p /a0/usr/plugins \
-    && if [ "$plugin_dir" != "/a0/usr/plugins/bitwarden" ]; then \
-      rm -rf /a0/usr/plugins/bitwarden; \
-      cp -a "$plugin_dir" /a0/usr/plugins/bitwarden; \
-    fi
+    /tmp/ghostship/setup-agent-zero-plugin.sh bitwarden BITWARDEN_PLUGIN_REPO
 
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,target=/var/lib/apt/lists,sharing=locked \
     --mount=type=cache,target=/root/.cache/pip \
-    plugin_dir="$(cd /a0 && /opt/venv-a0/bin/python /tmp/ghostship/install-agent-zero-plugin.py cloakbrowser CLOAKBROWSER_PLUGIN_REPO)" \
-    && cd "$plugin_dir" \
-    && /opt/venv-a0/bin/python execute.py setup --noninteractive \
-    && mkdir -p /a0/usr/plugins \
-    && if [ "$plugin_dir" != "/a0/usr/plugins/cloakbrowser" ]; then \
-      rm -rf /a0/usr/plugins/cloakbrowser; \
-      cp -a "$plugin_dir" /a0/usr/plugins/cloakbrowser; \
-    fi
+    /tmp/ghostship/setup-agent-zero-plugin.sh cloakbrowser CLOAKBROWSER_PLUGIN_REPO
 
 COPY usr/plugins/ /tmp/ghostship-plugins/
 

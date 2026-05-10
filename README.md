@@ -17,7 +17,7 @@ Thin Docker image customization for Agent Zero with Ghostship tooling and Agent 
 
 ## Plugin Installation
 
-Build-time Agent Zero plugins are installed through `scripts/install-agent-zero-plugin.py`, which always installs the configured Git source and then resolves the installed plugin directory through Agent Zero's plugin helper API. Each plugin is copied into `/a0/usr/plugins/<name>` after setup so fresh deployments have the expected persisted user plugin layout.
+Build-time Agent Zero plugins are installed through `scripts/setup-agent-zero-plugin.sh`, which delegates Git installation to `scripts/install-agent-zero-plugin.py`. The Python helper always installs the configured Git source and resolves the installed plugin directory through Agent Zero's plugin helper API. The setup wrapper runs plugin setup and copies each plugin into `/a0/usr/plugins/<name>` so fresh deployments have the expected persisted user plugin layout.
 
 Current plugin build args:
 

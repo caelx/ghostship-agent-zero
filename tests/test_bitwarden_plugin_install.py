@@ -7,6 +7,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 DOCKERFILE = ROOT / "Dockerfile"
 INSTALL_SCRIPT = ROOT / "scripts" / "install-agent-zero-plugin.py"
+SETUP_SCRIPT = ROOT / "scripts" / "setup-agent-zero-plugin.sh"
 PLUGIN_REPO = "https://github.com/caelx/a0-bitwarden-plugin.git"
 
 
@@ -15,11 +16,7 @@ def test_dockerfile_uses_agent_zero_plugin_installer() -> None:
     required = (
         f"ARG BITWARDEN_PLUGIN_REPO={PLUGIN_REPO}",
         "BITWARDEN_PLUGIN_REPO=${BITWARDEN_PLUGIN_REPO}",
-        "/tmp/ghostship/install-agent-zero-plugin.py bitwarden BITWARDEN_PLUGIN_REPO",
-        "cd /a0 &&",
-        'cd "$plugin_dir"',
-        "/opt/venv-a0/bin/python execute.py setup --noninteractive",
-        "/a0/usr/plugins/bitwarden",
+        "/tmp/ghostship/setup-agent-zero-plugin.sh bitwarden BITWARDEN_PLUGIN_REPO",
     )
     for snippet in required:
         if snippet not in source:
@@ -48,6 +45,19 @@ def test_plugin_install_script_uses_agent_zero_plugin_installer() -> None:
             raise AssertionError("plugin install script must install the configured repo even when a plugin exists")
 
 
+def test_plugin_setup_script_materializes_agent_zero_user_plugin() -> None:
+    source = SETUP_SCRIPT.read_text(encoding="utf-8")
+    required = (
+        'plugin_dir="$(cd /a0 && /opt/venv-a0/bin/python /tmp/ghostship/install-agent-zero-plugin.py "$plugin_name" "$repo_env")"',
+        '/opt/venv-a0/bin/python execute.py "$@"',
+        'target="/a0/usr/plugins/$plugin_name"',
+        'cp -a "$plugin_dir" "$target"',
+    )
+    for snippet in required:
+        if snippet not in source:
+            raise AssertionError(f"plugin setup script missing snippet: {snippet}")
+
+
 def test_dockerfile_does_not_directly_seed_bitwarden_mcp() -> None:
     source = DOCKERFILE.read_text(encoding="utf-8")
     forbidden = (
@@ -63,6 +73,7 @@ def test_dockerfile_does_not_directly_seed_bitwarden_mcp() -> None:
 def main() -> int:
     test_dockerfile_uses_agent_zero_plugin_installer()
     test_plugin_install_script_uses_agent_zero_plugin_installer()
+    test_plugin_setup_script_materializes_agent_zero_user_plugin()
     test_dockerfile_does_not_directly_seed_bitwarden_mcp()
     print("Bitwarden plugin install tests passed")
     return 0

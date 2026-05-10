@@ -8,6 +8,7 @@ ROOT = Path(__file__).resolve().parents[1]
 DOCKERFILE = ROOT / "Dockerfile"
 SCRIPTS = ROOT / "scripts"
 INSTALL_SCRIPT = SCRIPTS / "install-agent-zero-plugin.py"
+SETUP_SCRIPT = SCRIPTS / "setup-agent-zero-plugin.sh"
 PLUGIN_REPO = "https://github.com/caelx/a0-cloakbrowser-plugin.git"
 
 
@@ -15,10 +16,7 @@ def test_dockerfile_uses_agent_zero_plugin_installer() -> None:
     source = DOCKERFILE.read_text(encoding="utf-8")
     required = (
         f"ARG CLOAKBROWSER_PLUGIN_REPO={PLUGIN_REPO}",
-        "/tmp/ghostship/install-agent-zero-plugin.py cloakbrowser CLOAKBROWSER_PLUGIN_REPO",
-        "cd /a0 &&",
-        'cd "$plugin_dir"',
-        "/opt/venv-a0/bin/python execute.py setup --noninteractive",
+        "/tmp/ghostship/setup-agent-zero-plugin.sh cloakbrowser CLOAKBROWSER_PLUGIN_REPO",
     )
     for snippet in required:
         if snippet not in source:
@@ -46,6 +44,19 @@ def test_plugin_install_script_uses_agent_zero_plugin_installer() -> None:
     for snippet in forbidden:
         if snippet in source:
             raise AssertionError("plugin install script must install the configured repo even when a plugin exists")
+
+
+def test_plugin_setup_script_materializes_agent_zero_user_plugin() -> None:
+    source = SETUP_SCRIPT.read_text(encoding="utf-8")
+    required = (
+        'plugin_dir="$(cd /a0 && /opt/venv-a0/bin/python /tmp/ghostship/install-agent-zero-plugin.py "$plugin_name" "$repo_env")"',
+        '/opt/venv-a0/bin/python execute.py "$@"',
+        'target="/a0/usr/plugins/$plugin_name"',
+        'cp -a "$plugin_dir" "$target"',
+    )
+    for snippet in required:
+        if snippet not in source:
+            raise AssertionError(f"plugin setup script missing snippet: {snippet}")
 
 
 def test_dockerfile_no_longer_patches_agent_zero_browser_runtime() -> None:
@@ -87,6 +98,7 @@ def test_no_ghostship_cloakbrowser_patch_scripts_remain() -> None:
 def main() -> int:
     test_dockerfile_uses_agent_zero_plugin_installer()
     test_plugin_install_script_uses_agent_zero_plugin_installer()
+    test_plugin_setup_script_materializes_agent_zero_user_plugin()
     test_dockerfile_no_longer_patches_agent_zero_browser_runtime()
     test_no_ghostship_cloakbrowser_patch_scripts_remain()
     print("CloakBrowser plugin install tests passed")

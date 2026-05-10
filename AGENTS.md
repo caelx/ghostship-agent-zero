@@ -7,7 +7,7 @@
 ## Project Notes
 
 - This repo is a thin Docker overlay on `agent0ai/agent-zero:latest`, not a full fork.
-- Build-time Agent Zero plugins use `scripts/install-agent-zero-plugin.py`; pass plugin name plus repo env var, always install the configured Git source, run plugin setup, then materialize `/a0/usr/plugins/<name>`.
+- Build-time Agent Zero plugins use `scripts/setup-agent-zero-plugin.sh`; pass plugin name plus repo env var so the shared helper installs the configured Git source, runs plugin setup, then materializes `/a0/usr/plugins/<name>`.
 - CloakBrowser is installed as the public Agent Zero plugin at `/a0/usr/plugins/cloakbrowser`; do not patch Agent Zero browser runtime files in this repo.
 - Bitwarden is installed through `a0-bitwarden-plugin` from its Git URL; do not re-add direct npm/MCP seeding here.
 - Build helpers live in `scripts/`; tests and test runners live in `tests/`.
