@@ -67,6 +67,12 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,target=/root/.cache/pip \
     /tmp/ghostship/setup-agent-zero-plugin.sh cloakbrowser CLOAKBROWSER_PLUGIN_REPO
 
+RUN if [ -f /etc/supervisor/conf.d/cloakbrowser_xvfb.conf ] \
+    && ! grep -q 'program:cloakbrowser_xvfb' /etc/supervisor/conf.d/supervisord.conf; then \
+        printf '\n' >> /etc/supervisor/conf.d/supervisord.conf; \
+        cat /etc/supervisor/conf.d/cloakbrowser_xvfb.conf >> /etc/supervisor/conf.d/supervisord.conf; \
+    fi
+
 RUN /tmp/ghostship/setup-agent-zero-plugin.sh provider_ollama_cloud OLLAMA_CLOUD_PROVIDER_PLUGIN_REPO \
     && /tmp/ghostship/setup-agent-zero-plugin.sh provider_opencode_go OPENCODE_GO_PROVIDER_PLUGIN_REPO \
     && /tmp/ghostship/setup-agent-zero-plugin.sh provider_nvidia_build_free NVIDIA_BUILD_FREE_PROVIDER_PLUGIN_REPO \
