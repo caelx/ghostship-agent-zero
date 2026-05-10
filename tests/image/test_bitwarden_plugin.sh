@@ -4,7 +4,7 @@ set -euo pipefail
 source "$(dirname "$0")/lib.sh"
 
 echo "checking Bitwarden plugin install"
-run_bash_in_image '. /ins/setup_venv.sh local && test -d /a0/usr/plugins/bitwarden && cd /a0/usr/plugins/bitwarden && python execute.py status | tee /tmp/bitwarden-status.json'
+run_bash_in_image '. /ins/setup_venv.sh local && test -d /a0/usr/plugins/bitwarden && cd /a0/usr/plugins/bitwarden && python execute.py status'
 
 echo "checking Bitwarden executables"
 run_bash_in_image 'command -v bw >/dev/null && command -v mcp-server-bitwarden >/dev/null && bw --version'
@@ -12,6 +12,7 @@ run_bash_in_image 'command -v bw >/dev/null && command -v mcp-server-bitwarden >
 echo "checking Bitwarden MCP settings and skill"
 run_bash_in_image 'python3 - <<'"'"'PY'"'"'
 import json
+import subprocess
 from pathlib import Path
 
 settings_path = Path("/a0/usr/settings.json")
@@ -37,7 +38,14 @@ for snippet in ("name: bitwarden-credential-vault", "Search Bitwarden before ask
     if snippet not in text:
         raise AssertionError(f"Bitwarden skill missing expected text: {snippet}")
 
-status = json.loads(Path("/tmp/bitwarden-status.json").read_text(encoding="utf-8"))
+status_result = subprocess.run(
+    ["/opt/venv-a0/bin/python", "execute.py", "status"],
+    cwd="/a0/usr/plugins/bitwarden",
+    check=True,
+    capture_output=True,
+    text=True,
+)
+status = json.loads(status_result.stdout)
 if not status.get("setup", {}).get("installed"):
     raise AssertionError(f"Bitwarden plugin setup is not installed: {status}")
 auth_env = status.get("auth", {}).get("env", {})
