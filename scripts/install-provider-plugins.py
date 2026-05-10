@@ -38,6 +38,7 @@ PROVIDERS = (
 
 DEFAULT_PLUGIN_ROOT = Path("/git/agent-zero/usr/plugins")
 USER_PLUGIN_ROOT = Path("/a0/usr/plugins")
+PLUGIN_ROOTS = (DEFAULT_PLUGIN_ROOT, USER_PLUGIN_ROOT)
 
 
 def copy_plugin_tree(plugin_dir: Path, destination: Path) -> None:
@@ -49,6 +50,13 @@ def copy_plugin_tree(plugin_dir: Path, destination: Path) -> None:
     shutil.copytree(plugin_dir, destination)
 
 
+def remove_existing_plugin(plugin_name: str) -> None:
+    for root in PLUGIN_ROOTS:
+        path = root / plugin_name
+        if path.exists():
+            shutil.rmtree(path)
+
+
 def main() -> int:
     sys.path.insert(0, "/git/agent-zero")
 
@@ -58,13 +66,16 @@ def main() -> int:
     installed = []
     for plugin_name, env_var, default_repo in PROVIDERS:
         repo = os.environ.get(env_var, default_repo)
-        plugin_dir = plugins.find_plugin_dir(plugin_name)
-        if not plugin_dir:
+        remove_existing_plugin(plugin_name)
+        try:
             result = install_from_git(repo, plugin_name=plugin_name)
-            if not result.get("success"):
-                print(f"failed to install {plugin_name} plugin: {result}", file=sys.stderr)
-                return 1
-            plugin_dir = plugins.find_plugin_dir(plugin_name)
+        except Exception as exc:
+            print(f"failed to install {plugin_name} plugin from {repo}: {exc}", file=sys.stderr)
+            return 1
+        if not result.get("success"):
+            print(f"failed to install {plugin_name} plugin: {result}", file=sys.stderr)
+            return 1
+        plugin_dir = plugins.find_plugin_dir(plugin_name)
         if not plugin_dir:
             print(f"{plugin_name} plugin installed but plugin directory was not found", file=sys.stderr)
             return 1

@@ -36,6 +36,8 @@ def test_provider_install_script_uses_agent_zero_plugin_installer() -> None:
     source = INSTALL_SCRIPT.read_text(encoding="utf-8")
     required = (
         "from plugins._plugin_installer.helpers.install import install_from_git",
+        "remove_existing_plugin(plugin_name)",
+        "shutil.rmtree(path)",
         "install_from_git(repo, plugin_name=plugin_name)",
         "plugins.find_plugin_dir(plugin_name)",
         "DEFAULT_PLUGIN_ROOT = Path(\"/git/agent-zero/usr/plugins\")",
