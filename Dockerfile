@@ -4,13 +4,23 @@ FROM agent0ai/agent-zero:latest
 
 ARG BITWARDEN_PLUGIN_REPO=https://github.com/caelx/a0-bitwarden-plugin.git
 ARG CLOAKBROWSER_PLUGIN_REPO=https://github.com/caelx/a0-cloakbrowser-plugin.git
+ARG OLLAMA_CLOUD_PROVIDER_PLUGIN_REPO=https://github.com/caelx/a0-ollama-cloud-provider-plugin.git
+ARG OPENCODE_GO_PROVIDER_PLUGIN_REPO=https://github.com/caelx/a0-opencode-go-provider-plugin.git
+ARG NVIDIA_BUILD_FREE_PROVIDER_PLUGIN_REPO=https://github.com/caelx/a0-nvidia-build-free-provider-plugin.git
+ARG OPENCODE_ZEN_FREE_PROVIDER_PLUGIN_REPO=https://github.com/caelx/a0-opencode-zen-free-provider-plugin.git
+ARG OPENROUTER_FREE_PROVIDER_PLUGIN_REPO=https://github.com/caelx/a0-openrouter-free-provider-plugin.git
 
 ENV CLOAKBROWSER_CACHE_DIR=/opt/cloakbrowser \
     CLOAKBROWSER_AUTO_UPDATE=false \
     CLOAKBROWSER_PLUGIN_REPO=${CLOAKBROWSER_PLUGIN_REPO} \
     DISPLAY=:99 \
     GH_PROMPT_DISABLED=1 \
-    BITWARDEN_PLUGIN_REPO=${BITWARDEN_PLUGIN_REPO}
+    BITWARDEN_PLUGIN_REPO=${BITWARDEN_PLUGIN_REPO} \
+    OLLAMA_CLOUD_PROVIDER_PLUGIN_REPO=${OLLAMA_CLOUD_PROVIDER_PLUGIN_REPO} \
+    OPENCODE_GO_PROVIDER_PLUGIN_REPO=${OPENCODE_GO_PROVIDER_PLUGIN_REPO} \
+    NVIDIA_BUILD_FREE_PROVIDER_PLUGIN_REPO=${NVIDIA_BUILD_FREE_PROVIDER_PLUGIN_REPO} \
+    OPENCODE_ZEN_FREE_PROVIDER_PLUGIN_REPO=${OPENCODE_ZEN_FREE_PROVIDER_PLUGIN_REPO} \
+    OPENROUTER_FREE_PROVIDER_PLUGIN_REPO=${OPENROUTER_FREE_PROVIDER_PLUGIN_REPO}
 
 ENV PATH=/nix/var/nix/profiles/default/bin:$PATH
 
@@ -40,9 +50,10 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,target=/root/.cache/pip \
     /tmp/ghostship/setup-agent-zero-plugin.sh cloakbrowser CLOAKBROWSER_PLUGIN_REPO
 
-COPY usr/plugins/ /tmp/ghostship-plugins/
+RUN /tmp/ghostship/setup-agent-zero-plugin.sh provider_ollama_cloud OLLAMA_CLOUD_PROVIDER_PLUGIN_REPO \
+    && /tmp/ghostship/setup-agent-zero-plugin.sh provider_opencode_go OPENCODE_GO_PROVIDER_PLUGIN_REPO \
+    && /tmp/ghostship/setup-agent-zero-plugin.sh provider_nvidia_build_free NVIDIA_BUILD_FREE_PROVIDER_PLUGIN_REPO \
+    && /tmp/ghostship/setup-agent-zero-plugin.sh provider_opencode_zen_free OPENCODE_ZEN_FREE_PROVIDER_PLUGIN_REPO \
+    && /tmp/ghostship/setup-agent-zero-plugin.sh provider_openrouter_free OPENROUTER_FREE_PROVIDER_PLUGIN_REPO
 
-RUN mkdir -p /git/agent-zero/usr/plugins /a0/usr/plugins \
-    && cp -a /tmp/ghostship-plugins/. /git/agent-zero/usr/plugins/ \
-    && cp -a /tmp/ghostship-plugins/. /a0/usr/plugins/ \
-    && rm -rf /tmp/ghostship /tmp/ghostship-plugins
+RUN rm -rf /tmp/ghostship

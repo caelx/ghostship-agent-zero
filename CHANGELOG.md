@@ -2,10 +2,9 @@
 
 ## Unreleased
 
+- Moved Agent Zero provider plugins for Ollama Cloud, OpenCode Go, NVIDIA Build Free, OpenCode Zen Free, and OpenRouter Free into standalone plugin repositories.
+- Installed standalone provider plugins during the Ghostship image build and restored provider API key passthrough for runtime use.
 - Moved Bitwarden CLI/MCP setup out of this Docker overlay and into the standalone `a0-bitwarden-plugin`, installed by the image build through Agent Zero's Git plugin installer.
-- Added Agent Zero provider plugins for Ollama Cloud, OpenCode Go, NVIDIA Build Free, OpenCode Zen Free, and OpenRouter Free.
-- Added dynamic catalog filtering for NVIDIA Build tool-call-capable models, OpenCode Zen free models, and OpenRouter free text/tool models.
-- Added provider API key environment variables to the example environment and Compose service.
 - Improved CI build speed by allowing stable Docker install layers to reuse BuildKit cache.
 - Replaced Ghostship's Docker-time CloakBrowser runtime patch with the public CloakBrowser Agent Zero plugin installed through Agent Zero's plugin installer.
 - Removed Ghostship-owned CloakBrowser Playwright shim, runtime patcher, Playwright seeding, and staged browser-extension scripts.

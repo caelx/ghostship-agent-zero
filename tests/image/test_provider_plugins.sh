@@ -3,37 +3,38 @@ set -euo pipefail
 
 source "$(dirname "$0")/lib.sh"
 
-image="${1:-}"
+echo "checking standalone provider plugin installs"
+run_bash_in_image '. /ins/setup_venv.sh local && cd /a0 && PYTHONPATH=/git/agent-zero python - <<'"'"'PY'"'"'
+from pathlib import Path
 
-if [ -z "$image" ]; then
-  echo "usage: $0 IMAGE" >&2
-  exit 2
-fi
+from helpers import plugins
+from helpers.providers import ProviderManager
 
-echo "checking provider plugins"
-run_bash_in_image '
-for plugin in provider_ollama_cloud provider_opencode_go provider_nvidia_build_free provider_opencode_zen_free provider_openrouter_free; do
-  test -f "/a0/usr/plugins/$plugin/plugin.yaml"
-  test -f "/a0/usr/plugins/$plugin/conf/model_providers.yaml"
-  test -f "/a0/usr/plugins/$plugin/webui/config.html"
-done
+expected = {
+    "provider_ollama_cloud": "ollama_cloud",
+    "provider_opencode_go": "opencode_go",
+    "provider_nvidia_build_free": "nvidia_build_free",
+    "provider_opencode_zen_free": "opencode_zen_free",
+    "provider_openrouter_free": "openrouter_free",
+}
 
-grep -q "ollama_cloud:" /a0/usr/plugins/provider_ollama_cloud/conf/model_providers.yaml
-grep -q "litellm_provider: ollama" /a0/usr/plugins/provider_ollama_cloud/conf/model_providers.yaml
-grep -q "opencode_go:" /a0/usr/plugins/provider_opencode_go/conf/model_providers.yaml
-grep -q "litellm_provider: openai" /a0/usr/plugins/provider_opencode_go/conf/model_providers.yaml
+for plugin_name, provider_id in expected.items():
+    plugin_dir = plugins.find_plugin_dir(plugin_name)
+    if not plugin_dir:
+        raise AssertionError(f"plugin not installed: {plugin_name}")
+    root = Path(plugin_dir)
+    for required in ("plugin.yaml", "conf/model_providers.yaml", "webui/config.html"):
+        path = root / required
+        if not path.is_file():
+            raise AssertionError(f"installed plugin missing {required}: {path}")
+    provider_yaml = (root / "conf/model_providers.yaml").read_text(encoding="utf-8")
+    if f"{provider_id}:" not in provider_yaml:
+        raise AssertionError(f"provider id missing from plugin config: {provider_id}")
 
-grep -q "nvidia_build_free:" /a0/usr/plugins/provider_nvidia_build_free/conf/model_providers.yaml
-grep -q "opencode_zen_free:" /a0/usr/plugins/provider_opencode_zen_free/conf/model_providers.yaml
-grep -q "openrouter_free:" /a0/usr/plugins/provider_openrouter_free/conf/model_providers.yaml
-grep -q "/api/plugins/provider_nvidia_build_free/models" /a0/usr/plugins/provider_nvidia_build_free/conf/model_providers.yaml
-grep -q "/api/plugins/provider_opencode_zen_free/models" /a0/usr/plugins/provider_opencode_zen_free/conf/model_providers.yaml
-grep -q "/api/plugins/provider_openrouter_free/models" /a0/usr/plugins/provider_openrouter_free/conf/model_providers.yaml
+chat_ids = {provider["id"] for provider in ProviderManager.get_instance().get_raw_providers("chat")}
+missing = sorted(set(expected.values()) - chat_ids)
+if missing:
+    raise AssertionError(f"provider manager did not load provider ids: {missing}; ids={sorted(chat_ids)}")
 
-for plugin in provider_nvidia_build_free provider_opencode_zen_free provider_openrouter_free; do
-  test -f "/a0/usr/plugins/$plugin/api/models.py"
-  grep -q "class Models(ApiHandler)" "/a0/usr/plugins/$plugin/api/models.py"
-done
-
-! grep -R "provider_openrouter_free\|provider_opencode_zen_free\|provider_nvidia_build_free" /git/agent-zero/plugins/_model_config /git/agent-zero/helpers/providers.py
-'
+print(f"standalone provider plugins are installed and registered: {sorted(expected.values())}", flush=True)
+PY'
