@@ -9,6 +9,13 @@ ARG OPENCODE_GO_PROVIDER_PLUGIN_REPO=https://github.com/caelx/a0-opencode-go-pro
 ARG NVIDIA_BUILD_FREE_PROVIDER_PLUGIN_REPO=https://github.com/caelx/a0-nvidia-build-free-provider-plugin.git
 ARG OPENCODE_ZEN_FREE_PROVIDER_PLUGIN_REPO=https://github.com/caelx/a0-opencode-zen-free-provider-plugin.git
 ARG OPENROUTER_FREE_PROVIDER_PLUGIN_REPO=https://github.com/caelx/a0-openrouter-free-provider-plugin.git
+ARG BITWARDEN_PLUGIN_REV=latest
+ARG CLOAKBROWSER_PLUGIN_REV=latest
+ARG OLLAMA_CLOUD_PROVIDER_PLUGIN_REV=latest
+ARG OPENCODE_GO_PROVIDER_PLUGIN_REV=latest
+ARG NVIDIA_BUILD_FREE_PROVIDER_PLUGIN_REV=latest
+ARG OPENCODE_ZEN_FREE_PROVIDER_PLUGIN_REV=latest
+ARG OPENROUTER_FREE_PROVIDER_PLUGIN_REV=latest
 
 ENV CLOAKBROWSER_CACHE_DIR=/opt/cloakbrowser \
     CLOAKBROWSER_AUTO_UPDATE=false \
@@ -41,6 +48,16 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 RUN /tmp/ghostship/install-tools.sh github
 
 RUN /tmp/ghostship/install-tools.sh nix
+
+RUN printf '%s\n' \
+    "bitwarden=${BITWARDEN_PLUGIN_REV}" \
+    "cloakbrowser=${CLOAKBROWSER_PLUGIN_REV}" \
+    "provider_ollama_cloud=${OLLAMA_CLOUD_PROVIDER_PLUGIN_REV}" \
+    "provider_opencode_go=${OPENCODE_GO_PROVIDER_PLUGIN_REV}" \
+    "provider_nvidia_build_free=${NVIDIA_BUILD_FREE_PROVIDER_PLUGIN_REV}" \
+    "provider_opencode_zen_free=${OPENCODE_ZEN_FREE_PROVIDER_PLUGIN_REV}" \
+    "provider_openrouter_free=${OPENROUTER_FREE_PROVIDER_PLUGIN_REV}" \
+    > /tmp/ghostship/plugin-revisions.txt
 
 RUN --mount=type=cache,target=/root/.npm \
     /tmp/ghostship/setup-agent-zero-plugin.sh bitwarden BITWARDEN_PLUGIN_REPO

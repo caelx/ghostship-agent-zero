@@ -39,7 +39,7 @@ for snippet in ("name: bitwarden-credential-vault", "Search Bitwarden before ask
         raise AssertionError(f"Bitwarden skill missing expected text: {snippet}")
 
 status_result = subprocess.run(
-    ["/opt/venv-a0/bin/python", "execute.py", "status"],
+    ["/opt/venv-a0/bin/python", "execute.py", "status", "--json"],
     cwd="/a0/usr/plugins/bitwarden",
     check=True,
     capture_output=True,
