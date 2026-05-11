@@ -7,7 +7,7 @@ echo "checking CloakBrowser plugin install"
 run_bash_in_image '. /ins/setup_venv.sh local && test -d /a0/usr/plugins/cloakbrowser && cd /a0/usr/plugins/cloakbrowser && python execute.py status --json | tee /tmp/cloakbrowser-status.json'
 
 echo "checking plugin-managed headed display wiring"
-run_bash_in_image 'command -v Xvfb >/dev/null && test "$DISPLAY" = ":99" && grep -q "\[program:cloakbrowser_xvfb\]" /etc/supervisor/conf.d/cloakbrowser_xvfb.conf && grep -q "1920x1080x24" /etc/supervisor/conf.d/cloakbrowser_xvfb.conf && grep -q "\[program:cloakbrowser_xvfb\]" /etc/supervisor/conf.d/supervisord.conf && grep -q "1920x1080x24" /etc/supervisor/conf.d/supervisord.conf'
+run_bash_in_image 'command -v Xvfb >/dev/null && test "$DISPLAY" = ":99" && grep -q "\[program:cloakbrowser_xvfb\]" /etc/supervisor/conf.d/cloakbrowser_xvfb.conf && grep -q "1440x960x24" /etc/supervisor/conf.d/cloakbrowser_xvfb.conf && grep -q "\[program:cloakbrowser_xvfb\]" /etc/supervisor/conf.d/supervisord.conf && grep -q "1440x960x24" /etc/supervisor/conf.d/supervisord.conf'
 
 echo "checking Ghostship no longer installs runtime patch artifacts"
 run_bash_in_image '. /ins/setup_venv.sh local && cd /a0/usr/plugins/cloakbrowser && python execute.py status --json >/tmp/cloakbrowser-status.json && cd /a0 && PYTHONPATH=/git/agent-zero python - <<'"'"'PY'"'"'
@@ -45,7 +45,7 @@ print("runtime source is owned by Agent Zero; CloakBrowser patching is plugin-lo
 PY'
 
 echo "checking CloakBrowser plugin Browser runtime"
-run_bash_in_image 'Xvfb :99 -screen 0 1920x1080x24 -nolisten tcp >/tmp/ghostship-xvfb.log 2>&1 & xvfb_pid=$!; trap "kill $xvfb_pid 2>/dev/null || true" EXIT; sleep 1; . /ins/setup_venv.sh local && cd /a0 && PYTHONPATH=/git/agent-zero python - <<'"'"'PY'"'"'
+run_bash_in_image 'Xvfb :99 -screen 0 1440x960x24 -nolisten tcp >/tmp/ghostship-xvfb.log 2>&1 & xvfb_pid=$!; trap "kill $xvfb_pid 2>/dev/null || true" EXIT; sleep 1; . /ins/setup_venv.sh local && cd /a0 && PYTHONPATH=/git/agent-zero python - <<'"'"'PY'"'"'
 import asyncio
 import json
 import re
@@ -172,8 +172,8 @@ async def check_runtime() -> None:
         for required in (
             "--fingerprint",
             "--fingerprint-noise=false",
-            "--fingerprint-screen-width=1920",
-            "--fingerprint-screen-height=1080",
+            "--fingerprint-screen-width=1440",
+            "--fingerprint-screen-height=960",
         ):
             if not any(arg == required or str(arg).startswith(required + "=") for arg in final_args):
                 raise AssertionError(f"CloakBrowser launch arg missing: {required}; launch={launch}")
@@ -187,14 +187,14 @@ async def check_runtime() -> None:
             })"""
         )
         expected_dimensions = {
-            "innerWidth": 1920,
-            "innerHeight": 1080,
-            "screenWidth": 1920,
-            "screenHeight": 1080,
+            "innerWidth": 1440,
+            "innerHeight": 960,
+            "screenWidth": 1440,
+            "screenHeight": 960,
         }
         if dimensions != expected_dimensions:
             raise AssertionError(f"unexpected viewport/screen dimensions: {dimensions}")
-        print("CloakBrowser plugin launch patched args, humanization, and 1920x1080 dimensions", flush=True)
+        print("CloakBrowser plugin launch patched args, humanization, and 1440x960 dimensions", flush=True)
 
         blocked = []
         failed = []

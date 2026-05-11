@@ -19,14 +19,14 @@ if [ "$#" -eq 0 ]; then
 fi
 
 plugin_dir="$(cd /a0 && /opt/venv-a0/bin/python /tmp/ghostship/install-agent-zero-plugin.py "$plugin_name" "$repo_env")"
-cd "$plugin_dir"
-if [ -f execute.py ]; then
-  /opt/venv-a0/bin/python execute.py "$@"
-fi
-
 mkdir -p /a0/usr/plugins
 target="/a0/usr/plugins/$plugin_name"
 if [ "$plugin_dir" != "$target" ]; then
   rm -rf "$target"
   cp -a "$plugin_dir" "$target"
+fi
+
+cd "$target"
+if [ -f execute.py ]; then
+  /opt/venv-a0/bin/python execute.py "$@"
 fi

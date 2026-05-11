@@ -9,6 +9,7 @@ DOCKERFILE = ROOT / "Dockerfile"
 SCRIPTS = ROOT / "scripts"
 INSTALL_SCRIPT = SCRIPTS / "install-agent-zero-plugin.py"
 SETUP_SCRIPT = SCRIPTS / "setup-agent-zero-plugin.sh"
+UI_PATCH_SCRIPT = SCRIPTS / "patch-browser-ui.py"
 PLUGIN_REPO = "https://github.com/caelx/a0-cloakbrowser-plugin.git"
 
 
@@ -16,11 +17,13 @@ def test_dockerfile_uses_agent_zero_plugin_installer() -> None:
     source = DOCKERFILE.read_text(encoding="utf-8")
     required = (
         f"ARG CLOAKBROWSER_PLUGIN_REPO={PLUGIN_REPO}",
-        "/tmp/ghostship/setup-agent-zero-plugin.sh cloakbrowser CLOAKBROWSER_PLUGIN_REPO",
+        "/tmp/ghostship/setup-agent-zero-plugin.sh cloakbrowser CLOAKBROWSER_PLUGIN_REPO setup --noninteractive --force",
     )
     for snippet in required:
         if snippet not in source:
             raise AssertionError(f"Dockerfile missing plugin install snippet: {snippet}")
+    if "/tmp/ghostship/patch-browser-ui.py" not in source:
+        raise AssertionError("Dockerfile must apply the Browser UI ownership patch")
 
 
 def test_plugin_install_script_uses_agent_zero_plugin_installer() -> None:
@@ -50,10 +53,11 @@ def test_plugin_setup_script_materializes_agent_zero_user_plugin() -> None:
     source = SETUP_SCRIPT.read_text(encoding="utf-8")
     required = (
         'plugin_dir="$(cd /a0 && /opt/venv-a0/bin/python /tmp/ghostship/install-agent-zero-plugin.py "$plugin_name" "$repo_env")"',
-        "if [ -f execute.py ]; then",
-        '/opt/venv-a0/bin/python execute.py "$@"',
         'target="/a0/usr/plugins/$plugin_name"',
         'cp -a "$plugin_dir" "$target"',
+        'cd "$target"',
+        "if [ -f execute.py ]; then",
+        '/opt/venv-a0/bin/python execute.py "$@"',
     )
     for snippet in required:
         if snippet not in source:
@@ -76,6 +80,22 @@ def test_dockerfile_no_longer_patches_agent_zero_browser_runtime() -> None:
     for snippet in forbidden:
         if snippet in source:
             raise AssertionError(f"Dockerfile still contains obsolete CloakBrowser patch path: {snippet}")
+
+
+def test_browser_ui_patch_fails_clearly_if_upstream_moves() -> None:
+    source = UI_PATCH_SCRIPT.read_text(encoding="utf-8")
+    required = (
+        'ROOT = Path("/a0/plugins/_browser")',
+        'STORE = ROOT / "webui/browser-store.js"',
+        'REGISTER = ROOT / "extensions/webui/right_canvas_register_surfaces/register-browser.js"',
+        "__browserPageKeyHandled",
+        "browserStore.cleanup();",
+        "upstream Browser UI file not found",
+        "upstream Browser UI pattern not found",
+    )
+    for snippet in required:
+        if snippet not in source:
+            raise AssertionError(f"Browser UI patch script missing snippet: {snippet}")
 
 
 def test_no_ghostship_cloakbrowser_patch_scripts_remain() -> None:
@@ -101,6 +121,7 @@ def main() -> int:
     test_plugin_install_script_uses_agent_zero_plugin_installer()
     test_plugin_setup_script_materializes_agent_zero_user_plugin()
     test_dockerfile_no_longer_patches_agent_zero_browser_runtime()
+    test_browser_ui_patch_fails_clearly_if_upstream_moves()
     test_no_ghostship_cloakbrowser_patch_scripts_remain()
     print("CloakBrowser plugin install tests passed")
     return 0
