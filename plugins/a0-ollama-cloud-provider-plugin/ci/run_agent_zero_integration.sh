@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+image="${AGENT_ZERO_IMAGE:-agent0ai/agent-zero:latest}"
+repo="${PROVIDER_PLUGIN_REPO:-file:///plugin-src}"
+plugin_name="provider_ollama_cloud"
+provider_id="ollama_cloud"
+
+mkdir -p "$root/artifacts"
+
+docker run --rm --shm-size=2g   -e PROVIDER_PLUGIN_REPO="$repo"   -v "$root:/plugin-src:ro"   -v "$root/artifacts:/artifacts"   "$image"   bash -lc '
+    set -euo pipefail
+    . /ins/setup_venv.sh local
+    cd /a0
+    python /plugin-src/ci/install_plugin_via_agent_zero.py
+    plugin_dir="$(python /plugin-src/ci/find_plugin_dir.py)"
+    test -n "$plugin_dir"
+    cd "$plugin_dir"
+    test -f plugin.yaml
+    test -f conf/model_providers.yaml
+    test -f webui/config.html
+    grep -q "name: '"$plugin_name"'" plugin.yaml
+    grep -q "'"$provider_id"':" conf/model_providers.yaml
+    python ci/run_installed_smoke.py > /artifacts/installed-smoke.json
+  '
