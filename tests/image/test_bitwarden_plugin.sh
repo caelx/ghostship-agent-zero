@@ -54,5 +54,9 @@ if "BW_SESSION" in auth_env:
 for name in ("BW_CLIENT_ID", "BW_CLIENT_SECRET", "BW_PASSWORD"):
     if name not in auth_env:
         raise AssertionError(f"missing Bitwarden auth env presence key: {name}")
+
+git_manifest = Path("/git/agent-zero/usr/plugins/bitwarden/.bitwarden-install-manifest.json")
+if git_manifest.exists():
+    raise AssertionError(f"Bitwarden managed install state must not be written under /git: {git_manifest}")
 print("Bitwarden plugin configured MCP settings and credential skill", flush=True)
 PY'

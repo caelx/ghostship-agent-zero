@@ -18,6 +18,7 @@ services:
       - a0_root:/root
     ports:
       - "50080:80"
+    shm_size: 2g
 
 volumes:
   a0_usr:

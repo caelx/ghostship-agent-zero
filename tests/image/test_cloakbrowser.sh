@@ -9,6 +9,55 @@ run_bash_in_image '. /ins/setup_venv.sh local && test -d /a0/usr/plugins/cloakbr
 echo "checking plugin-managed headed display wiring"
 run_bash_in_image 'command -v Xvfb >/dev/null && test "$DISPLAY" = ":99" && grep -q "\[program:cloakbrowser_xvfb\]" /etc/supervisor/conf.d/cloakbrowser_xvfb.conf && grep -q "1440x960x24" /etc/supervisor/conf.d/cloakbrowser_xvfb.conf && grep -q "\[program:cloakbrowser_xvfb\]" /etc/supervisor/conf.d/supervisord.conf && grep -q "1440x960x24" /etc/supervisor/conf.d/supervisord.conf'
 
+echo "checking shared memory and upstream Browser UI parity"
+run_bash_in_image '. /ins/setup_venv.sh local && cd /a0 && PYTHONPATH=/git/agent-zero python - <<'"'"'PY'"'"'
+from pathlib import Path
+import os
+
+stat = os.statvfs("/dev/shm")
+size = stat.f_frsize * stat.f_blocks
+if size < 2 * 1024 * 1024 * 1024:
+    raise AssertionError(f"/dev/shm should be at least 2 GB for headed CloakBrowser: {size}")
+
+agent_zero_root = next(
+    root
+    for root in (Path("/a0"), Path("/git/agent-zero"))
+    if (root / "plugins" / "_browser").is_dir()
+)
+panel = (agent_zero_root / "plugins/_browser/webui/browser-panel.html").read_text(encoding="utf-8")
+store = (agent_zero_root / "plugins/_browser/webui/browser-store.js").read_text(encoding="utf-8")
+register = (
+    agent_zero_root
+    / "plugins/_browser/extensions/webui/right_canvas_register_surfaces/register-browser.js"
+).read_text(encoding="utf-8")
+
+for forbidden in ("__browserPageKeyHandled", "browserStore.cleanup();"):
+    if forbidden in store or forbidden in register:
+        raise AssertionError(f"Ghostship must not patch upstream Browser UI with {forbidden}")
+
+required = (
+    "x-create=\"$store.browserPage.onOpen($el, xAttrs($el) || {})\"",
+    "x-destroy=\"$store.browserPage.cleanup()\"",
+    "@keydown.window=\"$store.browserPage.handleKeydown($event)\"",
+    "@pointerdown.stop.prevent=\"$store.browserPage.startAnnotationSelection($event)\"",
+    "@pointerup.stop.prevent=\"$store.browserPage.finishAnnotationSelection($event)\"",
+)
+for snippet in required:
+    if snippet not in panel:
+        raise AssertionError(f"Browser panel missing upstream snippet: {snippet}")
+
+for snippet in (
+    "beginSurfaceHandoff()",
+    "finishSurfaceHandoff()",
+    "cancelSurfaceHandoff()",
+    "releaseSurfaceBindings()",
+    "kind: isDrag ? \"area\" : \"element\"",
+):
+    if snippet not in store:
+        raise AssertionError(f"Browser store missing upstream snippet: {snippet}")
+print("Browser UI remains upstream-aligned and /dev/shm is large enough", flush=True)
+PY'
+
 echo "checking Ghostship no longer installs runtime patch artifacts"
 run_bash_in_image '. /ins/setup_venv.sh local && cd /a0/usr/plugins/cloakbrowser && python execute.py status --json >/tmp/cloakbrowser-status.json && cd /a0 && PYTHONPATH=/git/agent-zero python - <<'"'"'PY'"'"'
 import inspect
@@ -157,8 +206,8 @@ async def check_runtime() -> None:
         for forbidden_arg in ("--disable-gpu", "--disable-extensions"):
             if f" {forbidden_arg} " in f" {main_command} ":
                 raise AssertionError(f"CloakBrowser plugin did not filter {forbidden_arg}: {main_command}")
-        if main_command.count("--disable-dev-shm-usage") != 1:
-            raise AssertionError(f"CloakBrowser launch should keep one /dev/shm fallback switch: {main_command}")
+        if "--disable-dev-shm-usage" in main_command:
+            raise AssertionError(f"CloakBrowser production launch should use /dev/shm instead of the fallback switch: {main_command}")
         if main_command.count("--no-sandbox") != 1:
             raise AssertionError(f"CloakBrowser launch should keep one root-safe sandbox switch: {main_command}")
         if "--headless" in main_command:
@@ -166,8 +215,8 @@ async def check_runtime() -> None:
 
         launch = shim_status().get("last_launch", {})
         shared_memory = launch.get("shared_memory", {})
-        if not shared_memory.get("disable_dev_shm_usage"):
-            raise AssertionError(f"CloakBrowser shared-memory fallback is not active: {launch}")
+        if shared_memory.get("disable_dev_shm_usage"):
+            raise AssertionError(f"CloakBrowser production launch should not use the shared-memory fallback: {launch}")
         final_args = launch.get("final_args", [])
         for required in (
             "--fingerprint",

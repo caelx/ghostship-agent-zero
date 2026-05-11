@@ -50,7 +50,8 @@ def test_plugin_setup_script_materializes_agent_zero_user_plugin() -> None:
     required = (
         'plugin_dir="$(cd /a0 && /opt/venv-a0/bin/python /tmp/ghostship/install-agent-zero-plugin.py "$plugin_name" "$repo_env")"',
         "if [ -f execute.py ]; then",
-        '/opt/venv-a0/bin/python execute.py "$@"',
+        'if [ "$plugin_name" = "cloakbrowser" ]; then',
+        'PYTHONPATH=/git/agent-zero:/a0:$target /opt/venv-a0/bin/python -m "usr.plugins.${plugin_name}.execute" "$@"',
         'target="/a0/usr/plugins/$plugin_name"',
         'cp -a "$plugin_dir" "$target"',
     )
