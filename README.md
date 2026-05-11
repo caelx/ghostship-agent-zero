@@ -19,6 +19,8 @@ Thin Docker image customization for Agent Zero with Ghostship tooling and Agent 
 
 Build-time Agent Zero plugins are installed through `scripts/setup-agent-zero-plugin.sh`, which delegates Git installation to `scripts/install-agent-zero-plugin.py`. The Python helper always installs the configured Git source and resolves the installed plugin directory through Agent Zero's plugin helper API. The setup wrapper runs plugin setup when a plugin provides `execute.py`, and copies each plugin into `/a0/usr/plugins/<name>` so fresh deployments have the expected persisted user plugin layout.
 
+The Ghostship plugin repositories are also vendored as full-history Git subtrees under `plugins/a0-*` for local development. Docker builds still default to the configured remote plugin repos, so CI does not build from the subtree folders unless a build is explicitly changed to do so.
+
 Current plugin build args:
 
 - `BITWARDEN_PLUGIN_REPO=https://github.com/caelx/a0-bitwarden-plugin.git`
@@ -28,6 +30,14 @@ Current plugin build args:
 - `NVIDIA_BUILD_FREE_PROVIDER_PLUGIN_REPO=https://github.com/caelx/a0-nvidia-build-free-provider-plugin.git`
 - `OPENCODE_ZEN_FREE_PROVIDER_PLUGIN_REPO=https://github.com/caelx/a0-opencode-zen-free-provider-plugin.git`
 - `OPENROUTER_FREE_PROVIDER_PLUGIN_REPO=https://github.com/caelx/a0-openrouter-free-provider-plugin.git`
+
+Subtree maintenance uses SSH GitHub URLs:
+
+```bash
+scripts/plugin-subtree.sh list
+scripts/plugin-subtree.sh pull cloakbrowser
+scripts/plugin-subtree.sh push cloakbrowser
+```
 
 ## Persistence
 
