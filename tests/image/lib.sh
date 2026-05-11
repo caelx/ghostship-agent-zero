@@ -11,9 +11,9 @@ fi
 run_in_image() {
   local entrypoint="$1"
   shift
-  timeout 120s docker run --rm --entrypoint "$entrypoint" "$image" "$@"
+  timeout 120s docker run --rm --shm-size=2g --entrypoint "$entrypoint" "$image" "$@"
 }
 
 run_bash_in_image() {
-  timeout 120s docker run --rm --entrypoint bash "$image" -lc "$1"
+  timeout 120s docker run --rm --shm-size=2g --entrypoint bash "$image" -lc "$1"
 }

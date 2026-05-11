@@ -66,6 +66,10 @@ docker compose up
 
 The Agent Zero UI is exposed at `http://localhost:50080`.
 
+Headed CloakBrowser deployments should provide at least `2 GB` of `/dev/shm`.
+The included Compose file sets `shm_size: 2g`; for direct Docker or Podman runs,
+pass `--shm-size=2g`.
+
 ## Environment
 
 `GH_PROMPT_DISABLED=1` is baked into the image so GitHub CLI commands avoid interactive prompts.

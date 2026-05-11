@@ -8,7 +8,9 @@
 - Improved CI build speed by allowing stable Docker install layers to reuse BuildKit cache.
 - Replaced Ghostship's Docker-time CloakBrowser runtime patch with the public CloakBrowser Agent Zero plugin installed through Agent Zero's plugin installer.
 - Removed Ghostship-owned CloakBrowser Playwright shim, runtime patcher, Playwright seeding, and staged browser-extension scripts.
-- Updated image tests to validate the plugin-owned CloakBrowser setup, launch path, managed extensions, and 1920x1080 headed runtime.
+- Updated image tests to validate the plugin-owned CloakBrowser setup, launch path, managed extensions, and 1440x960 headed runtime.
+- Removed Ghostship Browser UI patching so tab, keyboard, and annotation behavior stays aligned with upstream Agent Zero.
+- Documented the `2 GB` `/dev/shm` requirement for headed CloakBrowser deployments.
 - Consolidated build-time Agent Zero plugin installation through shared install and setup helpers for Git-sourced plugins.
 
 ## 0.1.0 - 2026-05-06

@@ -65,7 +65,7 @@ RUN --mount=type=cache,target=/root/.npm \
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,target=/var/lib/apt/lists,sharing=locked \
     --mount=type=cache,target=/root/.cache/pip \
-    /tmp/ghostship/setup-agent-zero-plugin.sh cloakbrowser CLOAKBROWSER_PLUGIN_REPO
+    /tmp/ghostship/setup-agent-zero-plugin.sh cloakbrowser CLOAKBROWSER_PLUGIN_REPO setup --noninteractive --force
 
 RUN if [ -f /etc/supervisor/conf.d/cloakbrowser_xvfb.conf ] \
     && ! grep -q 'program:cloakbrowser_xvfb' /etc/supervisor/conf.d/supervisord.conf; then \

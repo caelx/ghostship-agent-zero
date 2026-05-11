@@ -17,7 +17,7 @@
 - Persist only `/a0/usr` and `/root`; do not add custom XDG/runtime path plumbing.
 - Browser profiles use Agent Zero's upstream `tmp/browser/sessions` path.
 - CloakBrowser runs headed under Xvfb on `DISPLAY=:99`; do not add VNC/Desktop mode.
-- CloakBrowser plugin defaults use 1920x1080 display, viewport, and fingerprint dimensions.
+- CloakBrowser plugin defaults use 1440x960 display, viewport, and fingerprint dimensions.
 - Do not leave Ghostship helper scripts in the final image unless runtime behavior truly requires them.
 - Work in feature branches with pull requests; do not merge until PR CI passes.
 - Keep changes surgical so upstream Agent Zero updates stay easy to adopt.

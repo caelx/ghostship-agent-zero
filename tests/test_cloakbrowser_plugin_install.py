@@ -6,6 +6,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 DOCKERFILE = ROOT / "Dockerfile"
+COMPOSE_FILE = ROOT / "docker-compose.yml"
 SCRIPTS = ROOT / "scripts"
 INSTALL_SCRIPT = SCRIPTS / "install-agent-zero-plugin.py"
 SETUP_SCRIPT = SCRIPTS / "setup-agent-zero-plugin.sh"
@@ -16,11 +17,25 @@ def test_dockerfile_uses_agent_zero_plugin_installer() -> None:
     source = DOCKERFILE.read_text(encoding="utf-8")
     required = (
         f"ARG CLOAKBROWSER_PLUGIN_REPO={PLUGIN_REPO}",
-        "/tmp/ghostship/setup-agent-zero-plugin.sh cloakbrowser CLOAKBROWSER_PLUGIN_REPO",
+        "/tmp/ghostship/setup-agent-zero-plugin.sh cloakbrowser CLOAKBROWSER_PLUGIN_REPO setup --noninteractive --force",
     )
     for snippet in required:
         if snippet not in source:
             raise AssertionError(f"Dockerfile missing plugin install snippet: {snippet}")
+    forbidden = (
+        "/tmp/ghostship/patch-browser-ui.py",
+        "__browserPageKeyHandled",
+        "browserStore.cleanup();",
+    )
+    for snippet in forbidden:
+        if snippet in source:
+            raise AssertionError(f"Dockerfile must not patch upstream Browser UI: {snippet}")
+
+
+def test_compose_sets_large_shared_memory_for_cloakbrowser() -> None:
+    source = COMPOSE_FILE.read_text(encoding="utf-8")
+    if "shm_size: 2g" not in source:
+        raise AssertionError("Compose deployments should provide at least 2 GB of /dev/shm")
 
 
 def test_plugin_install_script_uses_agent_zero_plugin_installer() -> None:
@@ -50,10 +65,15 @@ def test_plugin_setup_script_materializes_agent_zero_user_plugin() -> None:
     source = SETUP_SCRIPT.read_text(encoding="utf-8")
     required = (
         'plugin_dir="$(cd /a0 && /opt/venv-a0/bin/python /tmp/ghostship/install-agent-zero-plugin.py "$plugin_name" "$repo_env")"',
-        "if [ -f execute.py ]; then",
-        '/opt/venv-a0/bin/python execute.py "$@"',
+        'revision="$(awk -F= -v key="$plugin_name"',
+        'git -C "$plugin_dir" fetch --depth=1 origin "$revision"',
+        'git -C "$plugin_dir" checkout --detach FETCH_HEAD',
         'target="/a0/usr/plugins/$plugin_name"',
         'cp -a "$plugin_dir" "$target"',
+        'cd "$target"',
+        "if [ -f execute.py ]; then",
+        'if [ "$plugin_name" = "cloakbrowser" ]; then',
+        'PYTHONPATH=/git/agent-zero:/a0 /opt/venv-a0/bin/python execute.py "$@"',
     )
     for snippet in required:
         if snippet not in source:
@@ -80,6 +100,7 @@ def test_dockerfile_no_longer_patches_agent_zero_browser_runtime() -> None:
 
 def test_no_ghostship_cloakbrowser_patch_scripts_remain() -> None:
     forbidden_files = (
+        "patch-browser-ui.py",
         "patch-browser-runtime.py",
         "ghostship_cloakbrowser_playwright_shim.py",
         "install-playwright-cloakbrowser.sh",
@@ -98,6 +119,7 @@ def test_no_ghostship_cloakbrowser_patch_scripts_remain() -> None:
 
 def main() -> int:
     test_dockerfile_uses_agent_zero_plugin_installer()
+    test_compose_sets_large_shared_memory_for_cloakbrowser()
     test_plugin_install_script_uses_agent_zero_plugin_installer()
     test_plugin_setup_script_materializes_agent_zero_user_plugin()
     test_dockerfile_no_longer_patches_agent_zero_browser_runtime()
