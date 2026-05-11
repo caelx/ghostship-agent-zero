@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Added full-history Git subtrees for the Ghostship `a0-*` plugin repositories under `plugins/`.
+- Added a helper for pulling from and pushing to the plugin subtree SSH remotes.
 - Moved Agent Zero provider plugins for Ollama Cloud, OpenCode Go, NVIDIA Build Free, OpenCode Zen Free, and OpenRouter Free into standalone plugin repositories.
 - Installed standalone provider plugins during the Ghostship image build and restored provider API key passthrough for runtime use.
 - Moved Bitwarden CLI/MCP setup out of this Docker overlay and into the standalone `a0-bitwarden-plugin`, installed by the image build through Agent Zero's Git plugin installer.

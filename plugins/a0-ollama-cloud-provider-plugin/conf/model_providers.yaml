@@ -1,0 +1,9 @@
+chat:
+  ollama_cloud:
+    name: Ollama Cloud
+    litellm_provider: ollama
+    models_list:
+      endpoint_url: "http://127.0.0.1:80/api/plugins/provider_ollama_cloud/models"
+      format: "ollama"
+    kwargs:
+      api_base: "https://ollama.com"

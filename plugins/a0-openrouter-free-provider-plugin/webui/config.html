@@ -1,0 +1,37 @@
+<div x-data="providerOpenRouterFreeStatus()" x-init="refresh()" class="space-y-4">
+  <div>
+    <div class="text-sm font-semibold">OpenRouter Free</div>
+    <div class="text-xs opacity-70">Provider ID: openrouter_free</div>
+  </div>
+  <dl class="grid gap-2 text-sm">
+    <div><dt class="font-medium">Required env var</dt><dd>OPENROUTER_FREE_API_KEY</dd></div>
+    <div><dt class="font-medium">Catalog URL</dt><dd>https://openrouter.ai/api/v1/models?output_modalities=text&amp;supported_parameters=tools</dd></div>
+    <div><dt class="font-medium">Last model-list request status</dt><dd x-text="status"></dd></div>
+    <div><dt class="font-medium">Included model count</dt><dd x-text="included"></dd></div>
+    <div><dt class="font-medium">Excluded model count</dt><dd x-text="excluded"></dd></div>
+    <div><dt class="font-medium">Excluded reasons</dt><dd x-text="reasons"></dd></div>
+  </dl>
+</div>
+<script>
+function providerOpenRouterFreeStatus() {
+  return {
+    status: "Not checked",
+    included: 0,
+    excluded: 0,
+    reasons: "None",
+    async refresh() {
+      try {
+        const res = await fetch("/api/plugins/provider_openrouter_free/models");
+        const data = await res.json();
+        const meta = data.meta || {};
+        this.status = meta.status || (res.ok ? "OK" : `HTTP ${res.status}`);
+        this.included = meta.included_count || 0;
+        this.excluded = meta.excluded_count || 0;
+        this.reasons = JSON.stringify(meta.excluded_reasons || {});
+      } catch (err) {
+        this.status = err?.message || "Request failed";
+      }
+    }
+  };
+}
+</script>
