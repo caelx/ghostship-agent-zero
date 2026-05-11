@@ -1,0 +1,10 @@
+name: bitwarden
+title: Bitwarden
+description: Install and enable this plugin, then click Execute to set up Bitwarden CLI/MCP and report status.
+version: 1.0.2
+settings_sections:
+  - mcp
+  - external
+per_project_config: false
+per_agent_config: false
+always_enabled: false
