@@ -1,0 +1,15 @@
+[project]
+name = "a0-opencode-go-provider-plugin"
+version = "1.0.0"
+description = "Adds OpenCode Go as an Agent Zero chat model provider."
+requires-python = ">=3.11"
+dependencies = ["httpx>=0.27"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+addopts = "-q"
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"

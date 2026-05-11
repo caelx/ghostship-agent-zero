@@ -1,0 +1,36 @@
+<div x-data="providerOpenCodeGoStatus()" x-init="refresh()" class="space-y-4">
+  <div>
+    <div class="text-sm font-semibold">OpenCode Go</div>
+    <div class="text-xs opacity-70">Provider ID: opencode_go</div>
+  </div>
+  <dl class="grid gap-2 text-sm">
+    <div><dt class="font-medium">Required env var</dt><dd>OPENCODE_GO_API_KEY</dd></div>
+    <div><dt class="font-medium">Catalog URL</dt><dd>https://opencode.ai/zen/go/v1/models</dd></div>
+    <div><dt class="font-medium">Last model-list request status</dt><dd x-text="status"></dd></div>
+    <div><dt class="font-medium">Included model count</dt><dd x-text="included"></dd></div>
+    <div><dt class="font-medium">Excluded model count</dt><dd>0</dd></div>
+    <div><dt class="font-medium">Excluded reasons</dt><dd>None</dd></div>
+  </dl>
+</div>
+<script>
+function providerOpenCodeGoStatus() {
+  return {
+    status: "Not checked",
+    included: 0,
+    async refresh() {
+      try {
+        const res = await fetch("/api/plugins/_model_config/model_search", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ provider: "opencode_go", model_type: "chat" })
+        });
+        const data = await res.json();
+        this.included = Array.isArray(data.models) ? data.models.length : 0;
+        this.status = res.ok ? "OK" : `HTTP ${res.status}`;
+      } catch (err) {
+        this.status = err?.message || "Request failed";
+      }
+    }
+  };
+}
+</script>
