@@ -74,14 +74,20 @@ def test_setup_script_supports_plugins_without_execute_hook() -> None:
     required = (
         'plugin_dir="$(cd /a0 && /opt/venv-a0/bin/python /tmp/ghostship/install-agent-zero-plugin.py "$plugin_name" "$repo_env")"',
         "if [ -f execute.py ]; then",
-        'if [ "$plugin_name" = "cloakbrowser" ]; then',
-        'PYTHONPATH=/git/agent-zero:/a0:$target /opt/venv-a0/bin/python -m "usr.plugins.${plugin_name}.execute" "$@"',
-        'target="/a0/usr/plugins/$plugin_name"',
-        'cp -a "$plugin_dir" "$target"',
+        'cd "$plugin_dir"',
+        'PYTHONPATH=/git/agent-zero:/a0:"$plugin_dir" /opt/venv-a0/bin/python execute.py "$@"',
     )
     for snippet in required:
         if snippet not in source:
             raise AssertionError(f"plugin setup script missing provider-compatible snippet: {snippet}")
+    forbidden = (
+        'target="/a0/usr/plugins/$plugin_name"',
+        'cp -a "$plugin_dir" "$target"',
+        'mkdir -p /a0/usr/plugins',
+    )
+    for snippet in forbidden:
+        if snippet in source:
+            raise AssertionError(f"plugin setup script must not materialize plugins under /a0/usr/plugins: {snippet}")
 
 
 def test_no_bundled_provider_plugin_sources_remain() -> None:

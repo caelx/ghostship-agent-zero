@@ -73,14 +73,57 @@ EOF
     ln -s "$(command -v pip3)" /usr/local/bin/pip
   fi
 
-  apt-get purge -y --auto-remove gnupg
+  apt-get purge -y gnupg
 }
 
 install_npm_tools() {
+  if ! npm view npm version >/dev/null 2>&1; then
+    install_official_nodejs
+  fi
+  npm view npm version >/dev/null
+  npm config set prefix /usr/local
   if ! command -v corepack >/dev/null 2>&1; then
     npm install -g corepack
   fi
   corepack enable || true
+}
+
+install_official_nodejs() {
+  arch="$(dpkg --print-architecture)"
+  case "$arch" in
+    amd64)
+      node_arch="x64"
+      ;;
+    arm64)
+      node_arch="arm64"
+      ;;
+    *)
+      echo "unsupported Node.js architecture: $arch" >&2
+      exit 1
+      ;;
+  esac
+
+  tmp="$(mktemp -d)"
+  base_url="https://nodejs.org/dist/latest-v22.x"
+  checksums="$tmp/SHASUMS256.txt"
+  curl -fsSLo "$checksums" "$base_url/SHASUMS256.txt"
+  tarball="$(awk -v arch="linux-${node_arch}.tar.xz" '$2 ~ arch "$" { print $2; exit }' "$checksums")"
+  if [ -z "$tarball" ]; then
+    echo "could not find Node.js linux-${node_arch} tarball" >&2
+    exit 1
+  fi
+  curl -fsSLo "$tmp/$tarball" "$base_url/$tarball"
+  (cd "$tmp" && grep "  $tarball$" SHASUMS256.txt | sha256sum -c -)
+
+  rm -rf /opt/nodejs
+  mkdir -p /opt/nodejs
+  tar -xJf "$tmp/$tarball" -C /opt/nodejs --strip-components=1
+  ln -sf /opt/nodejs/bin/node /usr/local/bin/node
+  ln -sf /opt/nodejs/bin/npm /usr/local/bin/npm
+  ln -sf /opt/nodejs/bin/npx /usr/local/bin/npx
+  ln -sf /opt/nodejs/bin/corepack /usr/local/bin/corepack
+  rm -rf "$tmp"
+  hash -r
 }
 
 install_uv() {

@@ -131,6 +131,19 @@ def test_execute_button_reports_status_after_setup_failure(monkeypatch, capsys) 
     assert "Setup status: setup" in output
 
 
+def test_execute_setup_report_includes_failed_npm_detail(capsys) -> None:
+    result = setup_result(ok=False)
+    result["dependencies"]["npm"] = {
+        "ok": False,
+        "returncode": 1,
+        "stderr_tail": "npm error network timeout\nmore details",
+    }
+
+    print(execute.format_setup_report(result))
+    output = capsys.readouterr().out
+    assert "npm packages: failed (npm error network timeout)" in output
+
+
 def test_execute_button_json_preserves_structured_output(monkeypatch, capsys) -> None:
     monkeypatch.setattr(
         plugin_imports,

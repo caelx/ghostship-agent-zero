@@ -17,7 +17,7 @@ Thin Docker image customization for Agent Zero with Ghostship tooling and Agent 
 
 ## Plugin Installation
 
-Build-time Agent Zero plugins are installed through `scripts/setup-agent-zero-plugin.sh`, which delegates Git installation to `scripts/install-agent-zero-plugin.py`. The Python helper always installs the configured Git source and resolves the installed plugin directory through Agent Zero's plugin helper API. The setup wrapper runs plugin setup when a plugin provides `execute.py`, and copies each plugin into `/a0/usr/plugins/<name>` so fresh deployments have the expected persisted user plugin layout.
+Build-time Agent Zero plugins are installed through `scripts/setup-agent-zero-plugin.sh`, which delegates Git installation to `scripts/install-agent-zero-plugin.py`. The Python helper always installs the configured Git source and resolves the installed plugin directory through Agent Zero's plugin helper API. The setup wrapper runs plugin setup from that resolved directory when a plugin provides `execute.py`. Ghostship does not materialize a second plugin copy under `/a0/usr/plugins`.
 
 The Ghostship plugin repositories are also vendored as full-history Git subtrees under `plugins/a0-*` for local development. Docker builds still default to the configured remote plugin repos, so CI does not build from the subtree folders unless a build is explicitly changed to do so.
 
@@ -48,7 +48,7 @@ Persist only these paths:
 
 The image does not create a custom runtime directory, override XDG paths, or redirect tool caches.
 
-The Bitwarden, CloakBrowser, and provider plugins are installed into `/a0/usr` during the image build. Existing deployments with old persisted `/a0/usr` volumes should reset those volumes when adopting this image.
+The Bitwarden, CloakBrowser, and provider plugins are installed into Agent Zero's canonical user plugin root as resolved by upstream `helpers.plugins.find_plugin_dir()`.
 
 ## Build
 

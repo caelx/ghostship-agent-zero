@@ -45,19 +45,25 @@ def test_plugin_install_script_uses_agent_zero_plugin_installer() -> None:
             raise AssertionError("plugin install script must install the configured repo even when a plugin exists")
 
 
-def test_plugin_setup_script_materializes_agent_zero_user_plugin() -> None:
+def test_plugin_setup_script_uses_upstream_plugin_dir() -> None:
     source = SETUP_SCRIPT.read_text(encoding="utf-8")
     required = (
         'plugin_dir="$(cd /a0 && /opt/venv-a0/bin/python /tmp/ghostship/install-agent-zero-plugin.py "$plugin_name" "$repo_env")"',
         "if [ -f execute.py ]; then",
-        'if [ "$plugin_name" = "cloakbrowser" ]; then',
-        'PYTHONPATH=/git/agent-zero:/a0:$target /opt/venv-a0/bin/python -m "usr.plugins.${plugin_name}.execute" "$@"',
-        'target="/a0/usr/plugins/$plugin_name"',
-        'cp -a "$plugin_dir" "$target"',
+        'cd "$plugin_dir"',
+        'PYTHONPATH=/git/agent-zero:/a0:"$plugin_dir" /opt/venv-a0/bin/python execute.py "$@"',
     )
     for snippet in required:
         if snippet not in source:
             raise AssertionError(f"plugin setup script missing snippet: {snippet}")
+    forbidden = (
+        'target="/a0/usr/plugins/$plugin_name"',
+        'cp -a "$plugin_dir" "$target"',
+        'mkdir -p /a0/usr/plugins',
+    )
+    for snippet in forbidden:
+        if snippet in source:
+            raise AssertionError(f"plugin setup script must not materialize plugins under /a0/usr/plugins: {snippet}")
 
 
 def test_dockerfile_does_not_directly_seed_bitwarden_mcp() -> None:
@@ -72,11 +78,34 @@ def test_dockerfile_does_not_directly_seed_bitwarden_mcp() -> None:
             raise AssertionError(f"Dockerfile still contains direct Bitwarden setup: {snippet}")
 
 
+def test_apt_cleanup_does_not_autoremove_npm_dependencies() -> None:
+    source = (ROOT / "scripts" / "install-tools.sh").read_text(encoding="utf-8")
+    if "apt-get purge -y --auto-remove gnupg" in source:
+        raise AssertionError("apt cleanup must not autoremove npm runtime dependencies")
+
+
+def test_npm_install_path_repairs_broken_distro_npm() -> None:
+    source = (ROOT / "scripts" / "install-tools.sh").read_text(encoding="utf-8")
+    required = (
+        "npm view npm version",
+        "install_official_nodejs",
+        "https://nodejs.org/dist/latest-v22.x",
+        "sha256sum -c -",
+        "ln -sf /opt/nodejs/bin/npm /usr/local/bin/npm",
+        "npm config set prefix /usr/local",
+    )
+    for snippet in required:
+        if snippet not in source:
+            raise AssertionError(f"npm install path missing repair snippet: {snippet}")
+
+
 def main() -> int:
     test_dockerfile_uses_agent_zero_plugin_installer()
     test_plugin_install_script_uses_agent_zero_plugin_installer()
-    test_plugin_setup_script_materializes_agent_zero_user_plugin()
+    test_plugin_setup_script_uses_upstream_plugin_dir()
     test_dockerfile_does_not_directly_seed_bitwarden_mcp()
+    test_apt_cleanup_does_not_autoremove_npm_dependencies()
+    test_npm_install_path_repairs_broken_distro_npm()
     print("Bitwarden plugin install tests passed")
     return 0
 

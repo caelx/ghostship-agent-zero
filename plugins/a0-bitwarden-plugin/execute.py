@@ -211,7 +211,12 @@ def _install_section(value: Any) -> str:
     if data.get("skipped"):
         reason = data.get("reason")
         return f"skipped ({reason})" if reason else "skipped"
-    return _result_word(data)
+    text = _result_word(data)
+    if text == "failed":
+        detail = data.get("stderr_tail") or data.get("stdout_tail")
+        if detail:
+            text = f"{text} ({_first_line(detail)})"
+    return text
 
 
 def _result_word(result: dict[str, Any]) -> str:
@@ -258,6 +263,11 @@ def _csv_or_none(items: list[str]) -> str:
 
 def _dict(value: Any) -> dict[str, Any]:
     return value if isinstance(value, dict) else {}
+
+
+def _first_line(value: Any) -> str:
+    text = str(value).strip()
+    return text.splitlines()[0][:300] if text else ""
 
 
 if __name__ == "__main__":
