@@ -1,7 +1,7 @@
 name: provider_ollama_cloud
 title: Ollama Cloud Provider
 description: Adds Ollama Cloud as a chat model provider.
-version: 1.0.1
+version: 1.0.2
 settings_sections:
   - agent
 per_project_config: false

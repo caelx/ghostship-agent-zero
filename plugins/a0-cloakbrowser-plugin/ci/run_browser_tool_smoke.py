@@ -11,7 +11,7 @@ from urllib.parse import quote
 
 
 async def main() -> int:
-    sys.path.insert(0, "/git/agent-zero")
+    sys.path.insert(0, "/a0")
     from plugins._browser.helpers import runtime as browser_runtime
     from plugins._browser.tools.browser import Browser
     from usr.plugins.cloakbrowser.helpers.playwright_shim import patch_playwright

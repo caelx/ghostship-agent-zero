@@ -4,7 +4,7 @@ set -euo pipefail
 source "$(dirname "$0")/lib.sh"
 
 echo "checking Bitwarden plugin install"
-run_bash_in_image '. /ins/setup_venv.sh local && cd /a0 && PYTHONPATH=/git/agent-zero /opt/venv-a0/bin/python - <<'"'"'PY'"'"'
+run_bash_in_image '. /ins/setup_venv.sh local && cd /a0 && PYTHONPATH=/a0 /opt/venv-a0/bin/python - <<'"'"'PY'"'"'
 from pathlib import Path
 from helpers import plugins
 
@@ -12,15 +12,17 @@ plugin_dir = plugins.find_plugin_dir("bitwarden")
 if not plugin_dir:
     raise AssertionError("Bitwarden plugin is not installed")
 root = Path(plugin_dir)
-if str(root).startswith("/a0/usr/plugins"):
-    raise AssertionError(f"Bitwarden plugin installed in stale /a0 root: {root}")
+if str(root) != "/a0/usr/plugins/bitwarden":
+    raise AssertionError(f"Bitwarden plugin installed in unexpected root: {root}")
+if Path("/git/agent-zero/usr/plugins/bitwarden").exists():
+    raise AssertionError("Bitwarden plugin must not be installed under /git/agent-zero/usr/plugins")
 PY'
 
 echo "checking Bitwarden executables"
 run_bash_in_image 'command -v bw >/dev/null && command -v mcp-server-bitwarden >/dev/null && bw --version'
 
 echo "checking Bitwarden MCP settings and skill"
-run_bash_in_image 'PYTHONPATH=/git/agent-zero /opt/venv-a0/bin/python - <<'"'"'PY'"'"'
+run_bash_in_image 'cd /a0 && PYTHONPATH=/a0 /opt/venv-a0/bin/python - <<'"'"'PY'"'"'
 import json
 import subprocess
 from pathlib import Path
@@ -67,8 +69,8 @@ for name in ("BW_CLIENT_ID", "BW_CLIENT_SECRET", "BW_PASSWORD"):
     if name not in auth_env:
         raise AssertionError(f"missing Bitwarden auth env presence key: {name}")
 
-stale_manifest = Path("/a0/usr/plugins/bitwarden/.bitwarden-install-manifest.json")
+stale_manifest = Path("/git/agent-zero/usr/plugins/bitwarden/.bitwarden-install-manifest.json")
 if stale_manifest.exists():
-    raise AssertionError(f"Bitwarden managed install state must not be written under /a0/usr/plugins: {stale_manifest}")
+    raise AssertionError(f"Bitwarden managed install state must not be written under /git/agent-zero/usr/plugins: {stale_manifest}")
 print("Bitwarden plugin configured MCP settings and credential skill", flush=True)
 PY'

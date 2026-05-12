@@ -4,7 +4,7 @@ set -euo pipefail
 source "$(dirname "$0")/lib.sh"
 
 echo "checking standalone provider plugin installs"
-run_bash_in_image '. /ins/setup_venv.sh local && cd /a0 && PYTHONPATH=/git/agent-zero python - <<'"'"'PY'"'"'
+run_bash_in_image '. /ins/setup_venv.sh local && cd /a0 && PYTHONPATH=/a0 python - <<'"'"'PY'"'"'
 from pathlib import Path
 
 from helpers import plugins

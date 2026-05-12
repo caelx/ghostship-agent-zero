@@ -4,7 +4,7 @@ set -euo pipefail
 source "$(dirname "$0")/lib.sh"
 
 echo "checking CloakBrowser plugin install"
-run_bash_in_image '. /ins/setup_venv.sh local && cd /a0 && PYTHONPATH=/git/agent-zero /opt/venv-a0/bin/python - <<'"'"'PY'"'"'
+run_bash_in_image '. /ins/setup_venv.sh local && cd /a0 && PYTHONPATH=/a0 /opt/venv-a0/bin/python - <<'"'"'PY'"'"'
 from pathlib import Path
 from helpers import plugins
 
@@ -12,10 +12,12 @@ plugin_dir = plugins.find_plugin_dir("cloakbrowser")
 if not plugin_dir:
     raise AssertionError("CloakBrowser plugin is not installed")
 root = Path(plugin_dir)
-if str(root).startswith("/a0/usr/plugins"):
-    raise AssertionError(f"CloakBrowser plugin installed in stale /a0 root: {root}")
+if str(root) != "/a0/usr/plugins/cloakbrowser":
+    raise AssertionError(f"CloakBrowser plugin installed in unexpected root: {root}")
+if Path("/git/agent-zero/usr/plugins/cloakbrowser").exists():
+    raise AssertionError("CloakBrowser plugin must not be installed under /git/agent-zero/usr/plugins")
 PY
-plugin_dir="$(PYTHONPATH=/git/agent-zero /opt/venv-a0/bin/python - <<'"'"'PY'"'"'
+plugin_dir="$(cd /a0 && PYTHONPATH=/a0 /opt/venv-a0/bin/python - <<'"'"'PY'"'"'
 from helpers import plugins
 print(plugins.find_plugin_dir("cloakbrowser"))
 PY
@@ -26,7 +28,7 @@ echo "checking plugin-managed headed display wiring"
 run_bash_in_image 'command -v Xvfb >/dev/null && test "$DISPLAY" = ":99" && grep -q "\[program:cloakbrowser_xvfb\]" /etc/supervisor/conf.d/cloakbrowser_xvfb.conf && grep -q "1440x960x24" /etc/supervisor/conf.d/cloakbrowser_xvfb.conf && grep -q "\[program:cloakbrowser_xvfb\]" /etc/supervisor/conf.d/supervisord.conf && grep -q "1440x960x24" /etc/supervisor/conf.d/supervisord.conf'
 
 echo "checking shared memory and upstream Browser UI parity"
-run_bash_in_image '. /ins/setup_venv.sh local && cd /a0 && PYTHONPATH=/git/agent-zero python - <<'"'"'PY'"'"'
+run_bash_in_image '. /ins/setup_venv.sh local && cd /a0 && PYTHONPATH=/a0 python - <<'"'"'PY'"'"'
 from pathlib import Path
 import os
 
@@ -75,11 +77,11 @@ print("Browser UI remains upstream-aligned and /dev/shm is large enough", flush=
 PY'
 
 echo "checking CloakBrowser installs only the removable V8 runtime source bootstrap"
-run_bash_in_image '. /ins/setup_venv.sh local && plugin_dir="$(PYTHONPATH=/git/agent-zero /opt/venv-a0/bin/python - <<'"'"'PY2'"'"'
+run_bash_in_image '. /ins/setup_venv.sh local && plugin_dir="$(cd /a0 && PYTHONPATH=/a0 /opt/venv-a0/bin/python - <<'"'"'PY2'"'"'
 from helpers import plugins
 print(plugins.find_plugin_dir("cloakbrowser"))
 PY2
-)" && cd "$plugin_dir" && /opt/venv-a0/bin/python execute.py status --json >/tmp/cloakbrowser-status.json && cd /a0 && PYTHONPATH=/git/agent-zero /opt/venv-a0/bin/python - <<'"'"'PY'"'"'
+)" && cd "$plugin_dir" && /opt/venv-a0/bin/python execute.py status --json >/tmp/cloakbrowser-status.json && cd /a0 && PYTHONPATH=/a0 /opt/venv-a0/bin/python - <<'"'"'PY'"'"'
 import inspect
 import json
 import site
@@ -116,7 +118,7 @@ for forbidden in (
     "ensure_ghostship_browser_extensions",
     "/opt/ghostship",
     "ghostship_cloakbrowser",
-    "/a0/usr/plugins/cloakbrowser",
+    "/git/agent-zero/usr/plugins/cloakbrowser",
 ):
     if forbidden in runtime_source:
         raise AssertionError(f"Agent Zero Browser runtime still contains Ghostship patch marker: {forbidden}")
@@ -124,7 +126,7 @@ print("runtime source has removable CloakBrowser V8 bootstrap only", flush=True)
 PY'
 
 echo "checking CloakBrowser plugin Browser runtime"
-run_bash_in_image 'Xvfb :99 -screen 0 1440x960x24 -nolisten tcp >/tmp/ghostship-xvfb.log 2>&1 & xvfb_pid=$!; trap "kill $xvfb_pid 2>/dev/null || true" EXIT; sleep 1; . /ins/setup_venv.sh local && cd /a0 && PYTHONPATH=/git/agent-zero python - <<'"'"'PY'"'"'
+run_bash_in_image 'Xvfb :99 -screen 0 1440x960x24 -nolisten tcp >/tmp/ghostship-xvfb.log 2>&1 & xvfb_pid=$!; trap "kill $xvfb_pid 2>/dev/null || true" EXIT; sleep 1; . /ins/setup_venv.sh local && cd /a0 && PYTHONPATH=/a0 python - <<'"'"'PY'"'"'
 import asyncio
 import json
 import re
@@ -134,12 +136,17 @@ from pathlib import Path
 from types import SimpleNamespace
 from urllib.parse import quote
 
-sys.path.insert(0, "/git/agent-zero")
+sys.path.insert(0, "/a0")
 
 from plugins._browser.helpers.playwright import get_playwright_binary
 from plugins._browser.helpers.runtime import _BrowserRuntimeCore
 from usr.plugins.cloakbrowser.helpers.extensions import active_extension_paths
-from usr.plugins.cloakbrowser.helpers.playwright_shim import patch_playwright, status as shim_status
+from usr.plugins.cloakbrowser.helpers.install_manifest import load_manifest
+from usr.plugins.cloakbrowser.helpers.playwright_shim import (
+    patch_playwright,
+    should_patch_launch,
+    status as shim_status,
+)
 from usr.plugins.cloakbrowser.helpers.runtime_patch import apply_runtime_patch
 from plugins._browser.tools.browser import Browser
 
@@ -195,9 +202,15 @@ async def check_runtime() -> None:
     patch_playwright()
 
     playwright_binary = get_playwright_binary(full_browser=True)
-    if not playwright_binary or "chromium-cloakbrowser" not in str(playwright_binary):
-        raise AssertionError(f"Agent Zero Playwright binary does not resolve through CloakBrowser masquerade: {playwright_binary}")
-    print(f"Agent Zero Playwright binary resolves through plugin masquerade: {playwright_binary}", flush=True)
+    if not playwright_binary:
+        raise AssertionError("Agent Zero Playwright binary was not found")
+    if not should_patch_launch({"executable_path": str(playwright_binary)}):
+        raise AssertionError(f"Agent Zero Playwright binary is not CloakBrowser patch-eligible: {playwright_binary}")
+    manifest = load_manifest()
+    masquerade = Path(manifest.get("playwright_shim", {}).get("masquerade_path") or "")
+    if not masquerade.exists() or "chromium-cloakbrowser" not in str(masquerade):
+        raise AssertionError(f"CloakBrowser masquerade was not installed: {masquerade}")
+    print(f"Agent Zero Playwright binary is patch-eligible: {playwright_binary}", flush=True)
 
     extension_paths = active_extension_paths()
     if extension_paths:

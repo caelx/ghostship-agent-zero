@@ -11,9 +11,28 @@ from pathlib import Path
 from typing import Any
 
 
+PLUGIN_NAME = "cloakbrowser"
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="CloakBrowser Agent Zero plugin maintenance")
-    parser.add_argument("command", nargs="?", default="run", choices=["run", "setup", "status", "repair", "uninstall"])
+    parser.add_argument(
+        "command",
+        nargs="?",
+        default="run",
+        choices=[
+            "run",
+            "reconcile",
+            "install",
+            "setup",
+            "update",
+            "status",
+            "repair",
+            "enable",
+            "disable",
+            "uninstall",
+        ],
+    )
     parser.add_argument("--noninteractive", action="store_true")
     parser.add_argument("--skip-system-deps", action="store_true")
     parser.add_argument("--remove-extensions", action="store_true")
@@ -29,7 +48,16 @@ def main(argv: list[str] | None = None) -> int:
         status = collect_status()
         _print_result(status if args.json else format_status(status))
         return 0
-    if args.command == "run" and not args.force and not _is_plugin_enabled():
+    if args.command in {"enable", "disable"}:
+        _set_plugin_enabled(args.command == "enable")
+        payload = {
+            "ok": True,
+            "command": args.command,
+            "toggle_state": "enabled" if args.command == "enable" else "disabled",
+        }
+        _print_result(json.dumps(payload, indent=2, sort_keys=True) if args.json else format_lifecycle(payload))
+        return 0
+    if args.command in {"run", "reconcile"} and not args.force and not _is_plugin_enabled():
         from plugin_imports import plugin_import
 
         uninstall = plugin_import("helpers.uninstall").uninstall
@@ -37,13 +65,14 @@ def main(argv: list[str] | None = None) -> int:
         result = uninstall(remove_extensions=False)
         payload = {
             "ok": bool(result.get("ok")),
-            "command": args.command,
+            "command": "reconcile" if args.command == "reconcile" else args.command,
+            "desired_state": "disabled",
             "disabled": True,
             "uninstall": result,
         }
         _print_result(json.dumps(payload, indent=2, sort_keys=True) if args.json else format_uninstall(result))
         return 0 if result.get("ok") else 1
-    if args.command in {"run", "setup", "repair"}:
+    if args.command in {"run", "reconcile", "install", "setup", "update", "repair"}:
         from plugin_imports import plugin_import
 
         collect_status = plugin_import("helpers.diagnostics").collect_status
@@ -59,7 +88,8 @@ def main(argv: list[str] | None = None) -> int:
         status = collect_status()
         payload = {
             "ok": bool(result.get("ok")) and setup_readiness(status)["ok"],
-            "command": args.command,
+            "command": "reconcile" if args.command == "reconcile" else args.command,
+            "desired_state": "enabled",
             "started": _iso(started),
             "finished": _iso(finished),
             "elapsed_seconds": round(time.monotonic() - monotonic_start, 2),
@@ -121,6 +151,17 @@ def _is_plugin_enabled() -> bool:
                 return True
 
     return False
+
+
+def _set_plugin_enabled(enabled: bool) -> None:
+    root = Path(__file__).resolve().parent
+    from plugin_imports import ensure_agent_zero_path
+
+    ensure_agent_zero_path(root)
+    with _without_local_helpers(root):
+        from helpers import plugins
+
+        plugins.toggle_plugin(PLUGIN_NAME, enabled)
 
 
 @contextmanager
@@ -219,6 +260,17 @@ def format_uninstall(result: dict[str, Any]) -> str:
     if result.get("removed_extensions"):
         lines.append(f"Removed extension directories: {len(result['removed_extensions'])}")
     return "\n".join(lines)
+
+
+def format_lifecycle(result: dict[str, Any]) -> str:
+    return "\n".join(
+        [
+            "CloakBrowser lifecycle",
+            f"Command: {result.get('command', 'unknown')}",
+            f"Toggle: {result.get('toggle_state', 'unknown')}",
+            f"Result: {'complete' if result.get('ok') else 'failed'}",
+        ]
+    )
 
 
 def _format_system_dependencies(system: dict[str, Any]) -> str:

@@ -1,7 +1,7 @@
 name: bitwarden
 title: Bitwarden
 description: Install and enable this plugin, then click Execute to set up Bitwarden CLI/MCP and report status.
-version: 1.0.2
+version: 1.0.3
 settings_sections:
   - mcp
   - external

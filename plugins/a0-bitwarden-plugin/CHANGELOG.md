@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.0.3
+
+- Add full Agent Zero lifecycle commands for install, update, enable, disable, status, and reconcile.
+- Align CI with vanilla Agent Zero API install, toggle, config, execute, and delete flows.
+
 ## 1.0.2
 
 - Run plugin-managed cleanup when the Bitwarden plugin is disabled or uninstalled through Agent Zero.

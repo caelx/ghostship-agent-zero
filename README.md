@@ -17,7 +17,9 @@ Thin Docker image customization for Agent Zero with Ghostship tooling and Agent 
 
 ## Plugin Installation
 
-Build-time Agent Zero plugins are installed through `scripts/setup-agent-zero-plugin.sh`, which delegates Git installation to `scripts/install-agent-zero-plugin.py`. The Python helper always installs the configured Git source and resolves the installed plugin directory through Agent Zero's plugin helper API. The setup wrapper runs plugin setup from that resolved directory when a plugin provides `execute.py`. Ghostship does not materialize a second plugin copy under `/a0/usr/plugins`.
+Build-time Agent Zero plugins are installed through `scripts/setup-agent-zero-plugin.sh`, which delegates Git installation to `scripts/install-agent-zero-plugin.py`. The Python helper runs from `/a0` with `/a0` first on `PYTHONPATH`, calls the same upstream `install_from_git` helper used by the Web UI plugin installer API, and resolves the installed plugin directory through Agent Zero's plugin helper API. Observed API installs place custom plugins under `/a0/usr/plugins/<plugin_name>`; Ghostship does not manually copy plugin directories into place.
+
+The observed upstream plugin installation contract is documented in `docs/agent-zero-plugin-installation.md`.
 
 The Ghostship plugin repositories are also vendored as full-history Git subtrees under `plugins/a0-*` for local development. Docker builds still default to the configured remote plugin repos, so CI does not build from the subtree folders unless a build is explicitly changed to do so.
 
@@ -48,7 +50,7 @@ Persist only these paths:
 
 The image does not create a custom runtime directory, override XDG paths, or redirect tool caches.
 
-The Bitwarden, CloakBrowser, and provider plugins are installed into Agent Zero's canonical user plugin root as resolved by upstream `helpers.plugins.find_plugin_dir()`.
+The Bitwarden, CloakBrowser, and provider plugins are installed into the observed Agent Zero user plugin root, `/a0/usr/plugins`, as resolved by upstream `helpers.plugins.find_plugin_dir()` from the `/a0` runtime context.
 
 ## Build
 

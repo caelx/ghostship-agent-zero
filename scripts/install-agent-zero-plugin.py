@@ -12,7 +12,10 @@ def main() -> int:
     parser.add_argument("repo_env")
     args = parser.parse_args()
 
-    sys.path.insert(0, "/git/agent-zero")
+    # Agent Zero's plugin paths are resolved relative to the active runtime
+    # tree. The Web UI runs from /a0, so build-time installs must do the same.
+    os.chdir("/a0")
+    sys.path.insert(0, "/a0")
 
     from helpers import plugins
     from plugins._plugin_installer.helpers.install import install_from_git

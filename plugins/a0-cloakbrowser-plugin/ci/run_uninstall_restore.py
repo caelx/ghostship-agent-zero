@@ -8,7 +8,7 @@ from pathlib import Path
 
 
 def main() -> int:
-    sys.path.insert(0, "/git/agent-zero")
+    sys.path.insert(0, "/a0")
     from helpers import plugins
 
     plugin_dir = plugins.find_plugin_dir("cloakbrowser")

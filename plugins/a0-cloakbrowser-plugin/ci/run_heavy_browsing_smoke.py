@@ -14,7 +14,7 @@ PAGE_COUNT = 21
 
 
 async def main() -> int:
-    sys.path.insert(0, "/git/agent-zero")
+    sys.path.insert(0, "/a0")
     from plugins._browser.helpers.runtime import _BrowserRuntimeCore
     from usr.plugins.cloakbrowser.helpers.playwright_shim import patch_playwright, status
     from usr.plugins.cloakbrowser.helpers.runtime_patch import apply_runtime_patch

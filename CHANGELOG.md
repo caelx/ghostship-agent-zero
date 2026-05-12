@@ -18,6 +18,8 @@
 - Updated CloakBrowser to use a removable V8 `_browser` runtime source bootstrap so WebUI Browser launches do not depend on process-local Execute monkey patches.
 - Added an npm health check that replaces a broken distro npm with verified official Node.js 22 binaries before plugin dependency setup.
 - Persisted CloakBrowser source-runtime launch diagnostics, including the launch wrapper, final args, and effective GeoIP location.
+- Documented the Agent Zero plugin installer API and observed `/a0/usr/plugins` custom plugin layout.
+- Reworked plugin integration CI to install plugins through vanilla Agent Zero's Git/ZIP installer API, then validate install, enable, disable, config round-trip, execute, and uninstall behavior.
 
 ## 0.1.0 - 2026-05-06
 
