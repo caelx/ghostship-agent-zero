@@ -99,6 +99,8 @@ def install_system_dependencies(*, runner: RunCommand | None = None) -> dict[str
         "commands": commands,
         "apt_update_returncode": update.returncode,
         "apt_install_returncode": install.returncode,
+        "apt_update": _result_output(update),
+        "apt_install": _result_output(install),
     }
 
 
@@ -111,6 +113,7 @@ def install_npm_packages(*, npm: str = "npm", runner: RunCommand | None = None) 
         "commands": [cmd],
         "returncode": result.returncode,
         "packages": list(BITWARDEN_PACKAGES),
+        **_result_output(result),
     }
 
 
@@ -128,3 +131,17 @@ def executable_version(name: str) -> str:
 
 def _run(cmd: list[str]) -> subprocess.CompletedProcess[str]:
     return subprocess.run(cmd, check=False, text=True, capture_output=True)
+
+
+def _result_output(result: subprocess.CompletedProcess[str]) -> dict[str, str]:
+    return {
+        "stdout_tail": _tail(result.stdout),
+        "stderr_tail": _tail(result.stderr),
+    }
+
+
+def _tail(value: str | None, *, limit: int = 4000) -> str:
+    text = (value or "").strip()
+    if len(text) <= limit:
+        return text
+    return text[-limit:]

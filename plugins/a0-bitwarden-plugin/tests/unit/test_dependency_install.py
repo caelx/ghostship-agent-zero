@@ -5,8 +5,13 @@ import subprocess
 from helpers import dependency_install
 
 
-def completed(cmd: list[str], returncode: int = 0) -> subprocess.CompletedProcess[str]:
-    return subprocess.CompletedProcess(cmd, returncode, stdout="", stderr="")
+def completed(
+    cmd: list[str],
+    returncode: int = 0,
+    stdout: str = "",
+    stderr: str = "",
+) -> subprocess.CompletedProcess[str]:
+    return subprocess.CompletedProcess(cmd, returncode, stdout=stdout, stderr=stderr)
 
 
 def test_dependency_install_skips_when_executables_exist(monkeypatch) -> None:
@@ -46,3 +51,13 @@ def test_dependency_install_reports_missing_npm_when_system_deps_skipped(monkeyp
     result = dependency_install.ensure_dependencies(skip_system_deps=True)
     assert result["ok"] is False
     assert result["state"] == "missing_npm"
+
+
+def test_dependency_install_reports_npm_failure_output(monkeypatch) -> None:
+    monkeypatch.setattr(dependency_install.shutil, "which", lambda name: "/usr/bin/npm")
+    result = dependency_install.install_npm_packages(
+        npm="/usr/bin/npm",
+        runner=lambda cmd: completed(cmd, returncode=1, stderr="npm error failed"),
+    )
+    assert result["ok"] is False
+    assert result["stderr_tail"] == "npm error failed"
