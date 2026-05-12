@@ -8,8 +8,8 @@
 
 - This repo is a thin Docker overlay on `agent0ai/agent-zero:latest`, not a full fork.
 - Ghostship plugin sources are full-history subtrees under `plugins/a0-*`; keep Docker defaults pointed at remote plugin repos unless explicitly testing local sources.
-- Build-time Agent Zero plugins use `scripts/setup-agent-zero-plugin.sh`; pass plugin name plus repo env var so the shared helper installs the configured Git source, runs plugin setup, then materializes `/a0/usr/plugins/<name>`.
-- CloakBrowser is installed as the public Agent Zero plugin at `/a0/usr/plugins/cloakbrowser`; do not patch Agent Zero browser runtime files in this repo.
+- Build-time Agent Zero plugins use `scripts/setup-agent-zero-plugin.sh`; pass plugin name plus repo env var so the shared helper installs the configured Git source, resolves the upstream plugin dir with Agent Zero helpers, then runs plugin setup there.
+- CloakBrowser is installed as the public Agent Zero plugin in Agent Zero's canonical user plugin root; do not patch Agent Zero browser runtime files in this repo or materialize a duplicate `/a0/usr/plugins/cloakbrowser`.
 - Bitwarden is installed through `a0-bitwarden-plugin` from its Git URL; do not re-add direct npm/MCP seeding here.
 - Build helpers live in `scripts/`; tests and test runners live in `tests/`.
 - Image tests should focus on installed tools and real patched browser behavior.

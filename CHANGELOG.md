@@ -14,6 +14,7 @@
 - Removed Ghostship Browser UI patching so tab, keyboard, and annotation behavior stays aligned with upstream Agent Zero.
 - Documented the `2 GB` `/dev/shm` requirement for headed CloakBrowser deployments.
 - Consolidated build-time Agent Zero plugin installation through shared install and setup helpers for Git-sourced plugins.
+- Aligned build-time plugin setup with Agent Zero's canonical user plugin root and stopped materializing duplicate plugin copies under `/a0/usr/plugins`.
 
 ## 0.1.0 - 2026-05-06
 

@@ -73,7 +73,7 @@ EOF
     ln -s "$(command -v pip3)" /usr/local/bin/pip
   fi
 
-  apt-get purge -y --auto-remove gnupg
+  apt-get purge -y gnupg
 }
 
 install_npm_tools() {

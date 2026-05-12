@@ -4,7 +4,23 @@ set -euo pipefail
 source "$(dirname "$0")/lib.sh"
 
 echo "checking CloakBrowser plugin install"
-run_bash_in_image '. /ins/setup_venv.sh local && test -d /a0/usr/plugins/cloakbrowser && cd /a0/usr/plugins/cloakbrowser && python execute.py status --json | tee /tmp/cloakbrowser-status.json'
+run_bash_in_image '. /ins/setup_venv.sh local && cd /a0 && PYTHONPATH=/git/agent-zero /opt/venv-a0/bin/python - <<'"'"'PY'"'"'
+from pathlib import Path
+from helpers import plugins
+
+plugin_dir = plugins.find_plugin_dir("cloakbrowser")
+if not plugin_dir:
+    raise AssertionError("CloakBrowser plugin is not installed")
+root = Path(plugin_dir)
+if str(root).startswith("/a0/usr/plugins"):
+    raise AssertionError(f"CloakBrowser plugin installed in stale /a0 root: {root}")
+PY
+plugin_dir="$(PYTHONPATH=/git/agent-zero /opt/venv-a0/bin/python - <<'"'"'PY'"'"'
+from helpers import plugins
+print(plugins.find_plugin_dir("cloakbrowser"))
+PY
+)"
+cd "$plugin_dir" && /opt/venv-a0/bin/python execute.py status --json | tee /tmp/cloakbrowser-status.json'
 
 echo "checking plugin-managed headed display wiring"
 run_bash_in_image 'command -v Xvfb >/dev/null && test "$DISPLAY" = ":99" && grep -q "\[program:cloakbrowser_xvfb\]" /etc/supervisor/conf.d/cloakbrowser_xvfb.conf && grep -q "1440x960x24" /etc/supervisor/conf.d/cloakbrowser_xvfb.conf && grep -q "\[program:cloakbrowser_xvfb\]" /etc/supervisor/conf.d/supervisord.conf && grep -q "1440x960x24" /etc/supervisor/conf.d/supervisord.conf'
@@ -59,7 +75,11 @@ print("Browser UI remains upstream-aligned and /dev/shm is large enough", flush=
 PY'
 
 echo "checking Ghostship no longer installs runtime patch artifacts"
-run_bash_in_image '. /ins/setup_venv.sh local && cd /a0/usr/plugins/cloakbrowser && python execute.py status --json >/tmp/cloakbrowser-status.json && cd /a0 && PYTHONPATH=/git/agent-zero python - <<'"'"'PY'"'"'
+run_bash_in_image '. /ins/setup_venv.sh local && plugin_dir="$(PYTHONPATH=/git/agent-zero /opt/venv-a0/bin/python - <<'"'"'PY2'"'"'
+from helpers import plugins
+print(plugins.find_plugin_dir("cloakbrowser"))
+PY2
+)" && cd "$plugin_dir" && /opt/venv-a0/bin/python execute.py status --json >/tmp/cloakbrowser-status.json && cd /a0 && PYTHONPATH=/git/agent-zero /opt/venv-a0/bin/python - <<'"'"'PY'"'"'
 import inspect
 import json
 import site
@@ -108,10 +128,10 @@ sys.path.insert(0, "/git/agent-zero")
 
 from plugins._browser.helpers.playwright import get_playwright_binary
 from plugins._browser.helpers.runtime import _BrowserRuntimeCore
-from usr.plugins.cloakbrowser.helpers.extensions import active_extension_paths, managed_extension_paths
+from usr.plugins.cloakbrowser.helpers.extensions import active_extension_paths
 from usr.plugins.cloakbrowser.helpers.playwright_shim import patch_playwright, status as shim_status
 from usr.plugins.cloakbrowser.helpers.runtime_patch import apply_runtime_patch
-from usr.plugins.cloakbrowser.tools.browser import Browser
+from plugins._browser.tools.browser import Browser
 
 
 def browser_command_lines(profile_dir: Path) -> list[str]:
@@ -170,14 +190,9 @@ async def check_runtime() -> None:
     print(f"Agent Zero Playwright binary resolves through plugin masquerade: {playwright_binary}", flush=True)
 
     extension_paths = active_extension_paths()
-    managed = managed_extension_paths()
-    for key in ("ublock_origin_lite", "i_still_dont_care_about_cookies"):
-        path = managed[key]
-        if not (path / "manifest.json").is_file():
-            raise AssertionError(f"plugin-managed extension is not installed: {path}")
-        if str(path) not in extension_paths:
-            raise AssertionError(f"plugin-managed extension is not active: {path}; active={extension_paths}")
-    print(f"plugin-managed Browser extensions are active: {extension_paths}", flush=True)
+    if extension_paths:
+        raise AssertionError(f"managed extensions should be opt-in by default: {extension_paths}")
+    print("plugin-managed Browser extensions are opt-in by default", flush=True)
 
     core = _BrowserRuntimeCore("ghostship-cloakbrowser-plugin-test")
     try:
@@ -245,41 +260,6 @@ async def check_runtime() -> None:
             raise AssertionError(f"unexpected viewport/screen dimensions: {dimensions}")
         print("CloakBrowser plugin launch patched args, humanization, and 1440x960 dimensions", flush=True)
 
-        blocked = []
-        failed = []
-        finished = []
-
-        def on_request_failed(request):
-            failure = request.failure or ""
-            failed.append((request.url, failure))
-            if "ERR_BLOCKED_BY_CLIENT" in failure:
-                blocked.append(request.url)
-
-        page.on("requestfailed", on_request_failed)
-        page.on("requestfinished", lambda request: finished.append(request.url))
-        await page.goto("https://example.com", wait_until="domcontentloaded")
-        for probe_url in (
-            "https://ad.doubleclick.net/ghostship-ad-probe.gif",
-            "https://3lift.com/ghostship-ad-probe.gif",
-            "https://scorecardresearch.com/ghostship-ad-probe.gif",
-        ):
-            await page.evaluate(
-                """url => new Promise(resolve => {
-                    const img = document.createElement("img");
-                    img.src = `${url}?ghostshipSmoke=${Date.now()}`;
-                    img.onload = () => resolve();
-                    img.onerror = () => resolve();
-                    document.body.appendChild(img);
-                    setTimeout(resolve, 4000);
-                })""",
-                probe_url,
-            )
-            if blocked:
-                break
-        await page.wait_for_timeout(1000)
-        if not blocked:
-            raise AssertionError(f"uBOL did not block the ad probe; failed={failed}; finished={finished}")
-        print(f"uBOL blocked ad probe: {blocked[0]}", flush=True)
     finally:
         await asyncio.wait_for(core.close(delete_profile=True), timeout=15)
         leftovers = wait_for_process_cleanup(core.profile_dir)

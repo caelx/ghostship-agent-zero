@@ -52,9 +52,7 @@ def install_configured_extensions(
     installed: list[str] = []
     actions: list[dict[str, Any]] = []
 
-    if ext["install_ublock_origin_lite"] and (
-        ext["update_ublock_origin_lite_on_setup"] or not _is_loadable(paths["ublock_origin_lite"])
-    ):
+    if ext["enable_ublock_origin_lite"]:
         action = "updated" if _is_loadable(paths["ublock_origin_lite"]) else "installed"
         meta = install_ublock_origin_lite(paths["ublock_origin_lite"], cfg["ublock_origin_lite"])
         record_extension(manifest, "ublock_origin_lite", meta)
@@ -76,10 +74,7 @@ def install_configured_extensions(
             _extension_action("ublock_origin_lite", paths["ublock_origin_lite"], "skipped", cfg)
         )
 
-    if ext["install_i_still_dont_care_about_cookies"] and (
-        ext["update_i_still_dont_care_about_cookies_on_setup"]
-        or not _is_loadable(paths["i_still_dont_care_about_cookies"])
-    ):
+    if ext["enable_i_still_dont_care_about_cookies"]:
         action = (
             "updated" if _is_loadable(paths["i_still_dont_care_about_cookies"]) else "installed"
         )
@@ -121,10 +116,7 @@ def install_configured_extensions(
             )
         )
 
-    if ext["install_bypass_paywalls_clean"] and (
-        ext["update_bypass_paywalls_clean_on_setup"]
-        or not _is_loadable(paths["bypass_paywalls_clean"])
-    ):
+    if ext["enable_bypass_paywalls_clean"]:
         action = "updated" if _is_loadable(paths["bypass_paywalls_clean"]) else "installed"
         meta = install_bypass_paywalls_clean(
             paths["bypass_paywalls_clean"], config=cfg["bypass_paywalls_clean"]
