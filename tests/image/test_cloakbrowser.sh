@@ -104,7 +104,7 @@ runtime_source = inspect.getsource(runtime)
 required = (
     "CLOAKBROWSER_SOURCE_PATCH_V8",
     "def _cloakbrowser_source_runtime():",
-    'find_plugin_dir("cloakbrowser")',
+    "find_plugin_dir(\"cloakbrowser\")",
     "Browser context could not open a new tab; restarting.",
 )
 for snippet in required:
