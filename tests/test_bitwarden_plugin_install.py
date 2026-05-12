@@ -84,12 +84,27 @@ def test_apt_cleanup_does_not_autoremove_npm_dependencies() -> None:
         raise AssertionError("apt cleanup must not autoremove npm runtime dependencies")
 
 
+def test_npm_install_path_repairs_broken_distro_npm() -> None:
+    source = (ROOT / "scripts" / "install-tools.sh").read_text(encoding="utf-8")
+    required = (
+        "npm view npm version",
+        "install_official_nodejs",
+        "https://nodejs.org/dist/latest-v22.x",
+        "sha256sum -c -",
+        "ln -sf /opt/nodejs/bin/npm /usr/local/bin/npm",
+    )
+    for snippet in required:
+        if snippet not in source:
+            raise AssertionError(f"npm install path missing repair snippet: {snippet}")
+
+
 def main() -> int:
     test_dockerfile_uses_agent_zero_plugin_installer()
     test_plugin_install_script_uses_agent_zero_plugin_installer()
     test_plugin_setup_script_uses_upstream_plugin_dir()
     test_dockerfile_does_not_directly_seed_bitwarden_mcp()
     test_apt_cleanup_does_not_autoremove_npm_dependencies()
+    test_npm_install_path_repairs_broken_distro_npm()
     print("Bitwarden plugin install tests passed")
     return 0
 

@@ -16,6 +16,7 @@
 - Consolidated build-time Agent Zero plugin installation through shared install and setup helpers for Git-sourced plugins.
 - Aligned build-time plugin setup with Agent Zero's canonical user plugin root and stopped materializing duplicate plugin copies under `/a0/usr/plugins`.
 - Updated CloakBrowser to use a removable V8 `_browser` runtime source bootstrap so WebUI Browser launches do not depend on process-local Execute monkey patches.
+- Added an npm health check that replaces a broken distro npm with verified official Node.js 22 binaries before plugin dependency setup.
 
 ## 0.1.0 - 2026-05-06
 
