@@ -92,6 +92,7 @@ def test_npm_install_path_repairs_broken_distro_npm() -> None:
         "https://nodejs.org/dist/latest-v22.x",
         "sha256sum -c -",
         "ln -sf /opt/nodejs/bin/npm /usr/local/bin/npm",
+        "npm config set prefix /usr/local",
     )
     for snippet in required:
         if snippet not in source:

@@ -81,6 +81,7 @@ install_npm_tools() {
     install_official_nodejs
   fi
   npm view npm version >/dev/null
+  npm config set prefix /usr/local
   if ! command -v corepack >/dev/null 2>&1; then
     npm install -g corepack
   fi
