@@ -1,4 +1,5 @@
 import types
+from contextlib import contextmanager
 from pathlib import Path
 
 from helpers import extensions
@@ -27,8 +28,8 @@ def test_sync_browser_extension_paths_uses_upstream_browser_config(monkeypatch, 
     )
     monkeypatch.setattr(
         extensions,
-        "_agent_zero_browser_config_helpers",
-        lambda: (
+        "_agent_zero_browser_config_context",
+        lambda: _browser_config_context(
             helpers_plugins,
             lambda: {"extension_paths": ["/external", str(stale_ubol), str(ubol)]},
         ),
@@ -65,8 +66,8 @@ def test_sync_browser_extension_paths_dedupes_exact_paths(monkeypatch, tmp_path)
     )
     monkeypatch.setattr(
         extensions,
-        "_agent_zero_browser_config_helpers",
-        lambda: (
+        "_agent_zero_browser_config_context",
+        lambda: _browser_config_context(
             helpers_plugins,
             lambda: {"extension_paths": ["/external", "/external", str(ubol)]},
         ),
@@ -108,8 +109,8 @@ def test_disable_managed_extension_paths_removes_upstream_browser_config(monkeyp
     )
     monkeypatch.setattr(
         extensions,
-        "_agent_zero_browser_config_helpers",
-        lambda: (
+        "_agent_zero_browser_config_context",
+        lambda: _browser_config_context(
             helpers_plugins,
             lambda: {"extension_paths": [str(ubol), "/external", str(stale_cookies), str(cookies)]},
         ),
@@ -191,3 +192,8 @@ def _write_manifest(path):
     path.mkdir(parents=True, exist_ok=True)
     (path / "manifest.json").write_text('{"name": "uBOL", "version": "2"}', encoding="utf-8")
     return {"path": str(path), "manifest_name": "uBOL", "manifest_version": "2"}
+
+
+@contextmanager
+def _browser_config_context(plugins, get_browser_config):
+    yield plugins, get_browser_config

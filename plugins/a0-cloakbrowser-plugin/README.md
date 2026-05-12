@@ -78,15 +78,21 @@ usr/plugins/_browser/playwright/chromium-cloakbrowser/chrome-linux/chrome
 
 That lets `_browser.helpers.playwright.get_playwright_binary(full_browser=True)`
 resolve a Chromium-shaped binary without forcing stock Playwright Chromium to be
-installed first. Runtime changes are process-local only: plugin startup applies
-the shadow-DOM runtime hook and patches Playwright launch methods in the current
-Agent Zero process. No Agent Zero `_browser` source files are edited.
+installed first. Setup also applies a lightweight removable source bootstrap to
+upstream `_browser/helpers/runtime.py`. The bootstrap delegates only the launch
+and headed lifecycle seams to this plugin when CloakBrowser is enabled; when the
+plugin is disabled it returns to upstream launch behavior.
 
-The runtime patch intentionally changes only the `_browser` seams CloakBrowser
-needs:
+The source bootstrap intentionally changes only the `_browser` seams
+CloakBrowser needs:
 
+- Persistent browser launch is routed through CloakBrowser's bundled
+  `launch_persistent_context_async` wrapper so humanize and CloakBrowser launch
+  arguments are active.
 - The open-shadow-DOM init script is replaced with a no-op when
   `advanced.disable_shadow_dom_init_patch` is enabled.
+- Headed mode keeps the startup `about:blank` page and recovers if closing the
+  visible browser leaves a stale context.
 
 Annotation, input forwarding, visible tab selection, screenshots, and Browser UI
 rendering remain owned by upstream `_browser`.
@@ -149,8 +155,7 @@ and update checks default enabled. When custom sites are enabled, setup uses
 BPC's upstream custom manifest so Chromium grants `*://*/*` host access.
 
 `sync_browser_extension_paths()` owns only managed CloakBrowser extension paths
-and exact-dedupes entries. Setup and uninstall remove stale managed paths from
-older `/a0/usr/plugins/cloakbrowser*` roots.
+and exact-dedupes entries.
 
 No paid-content bypass tests are run. CI only validates installation, manifest
 loading, enable/disable behavior, and launch argument inclusion.
@@ -163,11 +168,11 @@ Run uninstall before deleting the plugin directory if setup was run:
 python execute.py uninstall --noninteractive
 ```
 
-Uninstall disables plugin-managed `_browser` extension paths, removes
-process-local patches where possible, removes plugin-managed shim/supervisor
-files recorded in the install manifest, removes stale `/a0/usr/plugins`
-CloakBrowser roots, and preserves browser profiles, downloads, screenshots,
-cookies, and local storage. If setup started a direct plugin-managed Xvfb
+Uninstall disables plugin-managed `_browser` extension paths, restores the
+upstream `_browser` runtime source from the hash-checked backup, removes
+plugin-managed shim/supervisor files recorded in the install manifest, and
+preserves browser profiles, downloads, screenshots, cookies, and local storage.
+If setup started a direct plugin-managed Xvfb
 process, uninstall terminates the recorded PID after verifying it is an Xvfb
 process for the recorded display. Restart is not required for future launches.
 
@@ -210,5 +215,5 @@ browsing smoke navigates 20 pages in one CloakBrowser session, captures DOM and
 screenshots, verifies the session remains alive, and writes
 `artifacts/heavy-browsing-results.json`.
 
-The uninstall smoke verifies extension cleanup, masquerade removal, stale root
-cleanup, patch state, and profile preservation.
+The uninstall smoke verifies extension cleanup, masquerade removal, runtime
+source restoration, patch state, and profile preservation.

@@ -48,7 +48,7 @@ Persist only these paths:
 
 The image does not create a custom runtime directory, override XDG paths, or redirect tool caches.
 
-The Bitwarden, CloakBrowser, and provider plugins are installed into Agent Zero's canonical user plugin root as resolved by upstream `helpers.plugins.find_plugin_dir()`. Existing deployments with stale `/a0/usr/plugins/<name>` plugin copies should remove those stale directories so Agent Zero sees only one plugin root per plugin.
+The Bitwarden, CloakBrowser, and provider plugins are installed into Agent Zero's canonical user plugin root as resolved by upstream `helpers.plugins.find_plugin_dir()`.
 
 ## Build
 

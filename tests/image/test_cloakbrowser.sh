@@ -74,7 +74,7 @@ for snippet in (
 print("Browser UI remains upstream-aligned and /dev/shm is large enough", flush=True)
 PY'
 
-echo "checking Ghostship no longer installs runtime patch artifacts"
+echo "checking CloakBrowser installs only the removable V8 runtime source bootstrap"
 run_bash_in_image '. /ins/setup_venv.sh local && plugin_dir="$(PYTHONPATH=/git/agent-zero /opt/venv-a0/bin/python - <<'"'"'PY2'"'"'
 from helpers import plugins
 print(plugins.find_plugin_dir("cloakbrowser"))
@@ -101,16 +101,26 @@ for name in ("ghostship_cloakbrowser_playwright_shim.py", "ghostship_cloakbrowse
         raise AssertionError(f"obsolete global Playwright shim remains: {site_packages / name}")
 
 runtime_source = inspect.getsource(runtime)
+required = (
+    "CLOAKBROWSER_SOURCE_PATCH_V8",
+    "def _cloakbrowser_source_runtime():",
+    'find_plugin_dir("cloakbrowser")',
+    "Browser context could not open a new tab; restarting.",
+)
+for snippet in required:
+    if snippet not in runtime_source:
+        raise AssertionError(f"Agent Zero Browser runtime missing V8 source patch: {snippet}")
 for forbidden in (
     "# Ghostship disabled open shadow DOM init patch",
     "# Ghostship preserve headed placeholder page",
     "ensure_ghostship_browser_extensions",
     "/opt/ghostship",
     "ghostship_cloakbrowser",
+    "/a0/usr/plugins/cloakbrowser",
 ):
     if forbidden in runtime_source:
         raise AssertionError(f"Agent Zero Browser runtime still contains Ghostship patch marker: {forbidden}")
-print("runtime source is owned by Agent Zero; CloakBrowser patching is plugin-local", flush=True)
+print("runtime source has removable CloakBrowser V8 bootstrap only", flush=True)
 PY'
 
 echo "checking CloakBrowser plugin Browser runtime"

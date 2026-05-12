@@ -2,11 +2,12 @@
 
 ## Unreleased
 
-- Replace persistent Agent Zero `_browser` source patching with process-local
-  runtime and Playwright launch hooks.
+- Restore lightweight removable Agent Zero `_browser` runtime source bootstrap
+  patching for durable Browser launch/open behavior.
+- Route enabled launches through CloakBrowser's bundled launch wrapper so the
+  full humanize stack is active.
 - Add managed Bypass Paywalls Clean setCookie, custom-sites, and update opt-ins.
-- Exact-dedupe managed extension paths and clean stale `/a0/usr/plugins`
-  CloakBrowser roots left by older image builds.
+- Exact-dedupe managed extension paths.
 - Remove the plugin-owned Browser wrapper so upstream `_browser` is the only
   Browser tool and owns keyboard handling, refs, tabs, screenshots, downloads,
   and profiles.
@@ -25,8 +26,7 @@
   command lines do not emit duplicate `--no-sandbox`.
 - Document that production headed CloakBrowser containers should provide at
   least `2 GB` of `/dev/shm`.
-- Resolve setup state through upstream `helpers.plugins.find_plugin_dir()`
-  instead of materializing a duplicate `/a0/usr/plugins/cloakbrowser` root.
+- Resolve setup state through upstream `helpers.plugins.find_plugin_dir()`.
 - Add a Nix dev shell and Docker heavy browsing smoke that verifies 20
   navigations in one CloakBrowser session.
 - Fingerprint platform Windows and humanize remain enabled by default.

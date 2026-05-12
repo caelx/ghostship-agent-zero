@@ -9,7 +9,10 @@
 - This repo is a thin Docker overlay on `agent0ai/agent-zero:latest`, not a full fork.
 - Ghostship plugin sources are full-history subtrees under `plugins/a0-*`; keep Docker defaults pointed at remote plugin repos unless explicitly testing local sources.
 - Build-time Agent Zero plugins use `scripts/setup-agent-zero-plugin.sh`; pass plugin name plus repo env var so the shared helper installs the configured Git source, resolves the upstream plugin dir with Agent Zero helpers, then runs plugin setup there.
-- CloakBrowser is installed as the public Agent Zero plugin in Agent Zero's canonical user plugin root; do not patch Agent Zero browser runtime files in this repo or materialize a duplicate `/a0/usr/plugins/cloakbrowser`.
+- Agent Zero plugins install only through upstream `helpers.plugins.find_plugin_dir(name)`, backed by `files.get_abs_path(files.USER_DIR, files.PLUGINS_DIR)`; in this image that resolves under `/git/agent-zero/usr/plugins`.
+- Do not hardcode, prefer, migrate, clean, or otherwise manage legacy Ghostship plugin roots for CloakBrowser or any other plugin.
+- CloakBrowser cannot rely on process-local monkey patches as the primary integration path because WebUI plugin Execute runs `execute.py` in a separate subprocess, while the Browser tool runs inside the already-started Agent Zero server process. Patching Playwright or `_BrowserRuntimeCore` inside Execute only changes the short-lived Execute subprocess and does not affect Browser launches from the WebUI/server.
+- CloakBrowser therefore uses a lightweight removable `_browser/helpers/runtime.py` source bootstrap for durable launch/open behavior. Process-local monkey patches are supplemental only for smoke tests or already-imported live processes and must not be the primary design.
 - Bitwarden is installed through `a0-bitwarden-plugin` from its Git URL; do not re-add direct npm/MCP seeding here.
 - Build helpers live in `scripts/`; tests and test runners live in `tests/`.
 - Image tests should focus on installed tools and real patched browser behavior.

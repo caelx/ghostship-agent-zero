@@ -372,16 +372,16 @@ def _patch_class(cls: type, *, async_mode: bool) -> None:
             async def launch(self, **kwargs):
                 if _IN_CLOAK_LAUNCH.get():
                     return await originals["launch"](self, **kwargs)
-                patched_kwargs, _info = build_launch_overrides(kwargs, persistent=False)
-                if "humanize" in patched_kwargs or "human_preset" in patched_kwargs:
+                patched_kwargs, info = build_launch_overrides(kwargs, persistent=False)
+                if info.get("patched"):
                     return await _cloak_launch_async(patched_kwargs)
                 return await originals["launch"](self, **patched_kwargs)
         else:
             def launch(self, **kwargs):
                 if _IN_CLOAK_LAUNCH.get():
                     return originals["launch"](self, **kwargs)
-                patched_kwargs, _info = build_launch_overrides(kwargs, persistent=False)
-                if "humanize" in patched_kwargs or "human_preset" in patched_kwargs:
+                patched_kwargs, info = build_launch_overrides(kwargs, persistent=False)
+                if info.get("patched"):
                     return _cloak_launch_sync(patched_kwargs)
                 return originals["launch"](self, **patched_kwargs)
         setattr(cls, "launch", launch)
@@ -393,16 +393,16 @@ def _patch_class(cls: type, *, async_mode: bool) -> None:
                     return await originals["launch_persistent_context"](
                         self, user_data_dir, **kwargs
                     )
-                patched_kwargs, _info = build_launch_overrides(kwargs, persistent=True)
-                if "humanize" in patched_kwargs or "human_preset" in patched_kwargs:
+                patched_kwargs, info = build_launch_overrides(kwargs, persistent=True)
+                if info.get("patched"):
                     return await _cloak_launch_persistent_async(user_data_dir, patched_kwargs)
                 return await originals["launch_persistent_context"](self, user_data_dir, **patched_kwargs)
         else:
             def launch_persistent_context(self, user_data_dir, **kwargs):
                 if _IN_CLOAK_LAUNCH.get():
                     return originals["launch_persistent_context"](self, user_data_dir, **kwargs)
-                patched_kwargs, _info = build_launch_overrides(kwargs, persistent=True)
-                if "humanize" in patched_kwargs or "human_preset" in patched_kwargs:
+                patched_kwargs, info = build_launch_overrides(kwargs, persistent=True)
+                if info.get("patched"):
                     return _cloak_launch_persistent_sync(user_data_dir, patched_kwargs)
                 return originals["launch_persistent_context"](self, user_data_dir, **patched_kwargs)
         setattr(cls, "launch_persistent_context", launch_persistent_context)

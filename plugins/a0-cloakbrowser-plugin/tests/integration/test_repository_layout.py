@@ -16,6 +16,6 @@ def test_cloakbrowser_is_not_a_browser_tool_wrapper():
     root = Path(__file__).resolve().parents[2]
 
     assert not (root / "tools" / "browser.py").exists()
-    assert not (root / "helpers" / "source_patch.py").exists()
-    assert not (root / "helpers" / "patcher.py").exists()
-    assert not (root / "helpers" / "source_runtime.py").exists()
+    assert (root / "helpers" / "source_patch.py").is_file()
+    assert (root / "helpers" / "patcher.py").is_file()
+    assert (root / "helpers" / "source_runtime.py").is_file()

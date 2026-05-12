@@ -45,17 +45,18 @@ def collect_status(config: dict[str, Any] | None = None) -> dict[str, Any]:
         },
         "cloakbrowser": cloakbrowser_status(),
         "patches": {
+            "runtime_source_patch": manifest.get("runtime_source_patch", {}),
             "playwright_shim": {
                 **shim_status(),
                 "setup_installed": bool(manifest.get("playwright_shim", {}).get("masquerade_path")),
             },
             "runtime_patch": {
                 **runtime_patch_status(),
-                "setup_installed": False,
+                "setup_installed": bool(manifest.get("runtime_source_patch", {}).get("applied")),
             },
             "note": (
-                "CloakBrowser uses process-local runtime and Playwright patches only. "
-                "No Agent Zero _browser source files are patched."
+                "CloakBrowser uses a removable _browser runtime source bootstrap for "
+                "Browser launches. Process-local patches are supplemental only."
             ),
             "arg_filtering": "always_on",
         },

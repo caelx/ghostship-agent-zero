@@ -14,8 +14,8 @@ from .extensions import (
     sync_browser_extension_paths,
 )
 from .install_manifest import load_manifest, mark_setup, record_warning, save_manifest
-from .migration import remove_legacy_plugin_dirs
 from .seed_playwright import ensure_masquerade, remove_masquerade
+from .source_patch import patch_runtime_source
 from .xvfb import ensure_display, remove_direct_xvfb_if_owned, remove_supervisor_config_if_owned
 
 
@@ -24,7 +24,6 @@ def setup_plugin(*, noninteractive: bool = False, skip_system_deps: bool = False
     previous_manifest = load_manifest()
     manifest = copy.deepcopy(previous_manifest)
     apply_environment(cfg)
-    remove_legacy_plugin_dirs(manifest)
 
     system_result = {"skipped": True}
     if not skip_system_deps:
@@ -74,6 +73,7 @@ def setup_plugin(*, noninteractive: bool = False, skip_system_deps: bool = False
         display_result = ensure_display(cfg, manifest)
         extension_installs = install_configured_extensions(cfg, manifest)
         active_paths = sync_browser_extension_paths(cfg)
+        source_patch = patch_runtime_source(manifest)
     except Exception as exc:
         record_warning(manifest, f"Setup failed after dependency install: {exc}")
         rollback = _rollback_failed_setup(manifest, previous_manifest=previous_manifest)
@@ -87,10 +87,11 @@ def setup_plugin(*, noninteractive: bool = False, skip_system_deps: bool = False
             "manifest": manifest,
         }
     runtime_patch = {
-        "patching": "process-local",
-        "persistent": False,
-        "applied_in_setup": False,
-        "applies_when": "Agent Zero process startup and Browser launch",
+        "patching": "source-bootstrap",
+        "persistent": True,
+        "applied_in_setup": bool(source_patch.get("applied")),
+        "source_patch": source_patch,
+        "applies_when": "Agent Zero _browser runtime import and Browser launch",
     }
     shim_patch = {
         "patching": "process-local",

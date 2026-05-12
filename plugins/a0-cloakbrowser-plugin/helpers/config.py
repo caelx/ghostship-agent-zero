@@ -12,7 +12,6 @@ PLUGIN_NAME = "cloakbrowser"
 PLUGIN_TITLE = "CloakBrowser"
 MANIFEST_NAME = ".cloakbrowser-install-manifest.json"
 AGENT_ZERO_FALLBACK_DIR = Path("/git/agent-zero")
-LEGACY_A0_PLUGIN_ROOT = Path("/a0") / "usr" / "plugins"
 
 BPC_SOURCE_URL = (
     "https://gitflic.ru/project/magnolia1234/bpc_uploads/blob/raw"
@@ -101,16 +100,6 @@ def plugin_dir() -> Path:
     if found:
         return found
     return Path(__file__).resolve().parents[1]
-
-
-def legacy_plugin_dirs() -> list[Path]:
-    if not LEGACY_A0_PLUGIN_ROOT.is_dir():
-        return []
-    return sorted(
-        path
-        for path in LEGACY_A0_PLUGIN_ROOT.iterdir()
-        if path.is_dir() and (path.name == PLUGIN_NAME or path.name.startswith(f"{PLUGIN_NAME}."))
-    )
 
 
 def manifest_path() -> Path:
