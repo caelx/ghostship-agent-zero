@@ -2,10 +2,8 @@
 
 ## Unreleased
 
-- Add full Agent Zero lifecycle commands for install, update, enable, disable,
-  status, and reconcile.
-- Align CI with vanilla Agent Zero API install, toggle, config, execute, and
-  delete flows.
+- Bump the Agent Zero `_browser` runtime source bootstrap to V9 and guard the
+  current content-helper init script behind `disable_shadow_dom_init_patch`.
 - Restore lightweight removable Agent Zero `_browser` runtime source bootstrap
   patching for durable Browser launch/open behavior.
 - Route enabled launches through CloakBrowser's bundled launch wrapper so the

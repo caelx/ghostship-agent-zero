@@ -400,10 +400,7 @@ def run_plugin_smokes(container: str, plugin_name: str) -> None:
             "python ci/run_mcp_config_smoke.py",
             "python ci/run_skill_smoke.py",
         ],
-        "cloakbrowser": [
-            "python ci/collect_versions.py",
-            "python execute.py status --json > /artifacts/plugin-status-after-lifecycle.json",
-        ],
+        "cloakbrowser": cloakbrowser_smoke_commands(),
     }.get(plugin_name, [])
     for index, command in enumerate(commands, start=1):
         docker_exec(
@@ -414,6 +411,28 @@ def run_plugin_smokes(container: str, plugin_name: str) -> None:
             + command,
             artifact_name=f"smoke-{index}.log",
         )
+
+
+def cloakbrowser_smoke_commands() -> list[str]:
+    commands = [
+        "python ci/collect_versions.py",
+        "python execute.py status --json > /artifacts/plugin-status-after-lifecycle.json",
+        "python ci/run_runtime_smoke.py",
+    ]
+    if os.environ.get("CLOAKBROWSER_INTEGRATION_SCOPE", "full") != "full":
+        return commands
+    commands.extend(
+        [
+            "python ci/run_heavy_browsing_smoke.py",
+            "python ci/run_extension_smoke.py",
+            "python ci/run_browser_tool_smoke.py",
+            "python ci/run_detection_smoke.py",
+        ]
+    )
+    if os.environ.get("CLOAKBROWSER_LIVE_DETECTOR", "0") == "1":
+        commands.append("python ci/run_live_detector_smoke.py")
+    commands.append("python ci/run_uninstall_restore.py")
+    return commands
 
 
 class ApiClient:

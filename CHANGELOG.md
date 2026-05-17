@@ -21,6 +21,15 @@
 - Documented the Agent Zero plugin installer API and observed `/a0/usr/plugins` custom plugin layout.
 - Reworked plugin integration CI to install plugins through vanilla Agent Zero's Git/ZIP installer API, then validate install, enable, disable, config round-trip, execute, and uninstall behavior.
 - Let pull-request image builds test matching plugin PR branches before falling back to each plugin repo's default branch.
+- Updated CloakBrowser to a V9 `_browser` runtime source bootstrap that honors
+  `disable_shadow_dom_init_patch` for the current Agent Zero content helper.
+- Expanded full-scope CloakBrowser plugin lifecycle CI to run runtime, browser
+  tool, detection, extension, and cleanup smokes while keeping reduced scopes
+  lightweight.
+- Fixed Bitwarden Execute reconciliation so Agent Zero's structured enabled
+  plugin entries are normalized before uninstall decisions.
+- Restored strict NVIDIA catalog `--check` drift failures while still writing a
+  candidate artifact for refresh review.
 
 ## 0.1.0 - 2026-05-06
 

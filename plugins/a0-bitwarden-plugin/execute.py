@@ -107,7 +107,23 @@ def _is_plugin_enabled() -> bool:
         enabled = plugins.get_enabled_plugins(None)
     except Exception:
         return True
-    return "bitwarden" in (enabled or [])
+    return any(_enabled_plugin_name(item) == "bitwarden" for item in (enabled or []))
+
+
+def _enabled_plugin_name(item: Any) -> str:
+    if isinstance(item, str):
+        return item
+    if isinstance(item, dict):
+        for key in ("name", "id", "plugin_name"):
+            value = item.get(key)
+            if value:
+                return str(value)
+        return ""
+    for attr in ("name", "id", "plugin_name"):
+        value = getattr(item, attr, None)
+        if value:
+            return str(value)
+    return ""
 
 
 def _set_plugin_enabled(enabled: bool) -> None:
