@@ -104,14 +104,14 @@ for name in ("ghostship_cloakbrowser_playwright_shim.py", "ghostship_cloakbrowse
 
 runtime_source = inspect.getsource(runtime)
 required = (
-    "CLOAKBROWSER_SOURCE_PATCH_V8",
+    "CLOAKBROWSER_SOURCE_PATCH_V9",
     "def _cloakbrowser_source_runtime():",
     "find_plugin_dir(\"cloakbrowser\")",
     "Browser context could not open a new tab; restarting.",
 )
 for snippet in required:
     if snippet not in runtime_source:
-        raise AssertionError(f"Agent Zero Browser runtime missing V8 source patch: {snippet}")
+        raise AssertionError(f"Agent Zero Browser runtime missing CloakBrowser source patch: {snippet}")
 for forbidden in (
     "# Ghostship disabled open shadow DOM init patch",
     "# Ghostship preserve headed placeholder page",
@@ -122,7 +122,7 @@ for forbidden in (
 ):
     if forbidden in runtime_source:
         raise AssertionError(f"Agent Zero Browser runtime still contains Ghostship patch marker: {forbidden}")
-print("runtime source has removable CloakBrowser V8 bootstrap only", flush=True)
+print("runtime source has removable CloakBrowser V9 bootstrap only", flush=True)
 PY'
 
 echo "checking CloakBrowser plugin Browser runtime"
