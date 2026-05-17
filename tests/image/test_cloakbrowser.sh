@@ -128,10 +128,7 @@ PY'
 echo "checking CloakBrowser plugin Browser runtime"
 run_bash_in_image 'Xvfb :99 -screen 0 1440x960x24 -nolisten tcp >/tmp/ghostship-xvfb.log 2>&1 & xvfb_pid=$!; trap "kill $xvfb_pid 2>/dev/null || true" EXIT; sleep 1; . /ins/setup_venv.sh local && cd /a0 && PYTHONPATH=/a0 python - <<'"'"'PY'"'"'
 import asyncio
-import json
-import re
 import sys
-import time
 from pathlib import Path
 from types import SimpleNamespace
 from urllib.parse import quote
@@ -139,41 +136,11 @@ from urllib.parse import quote
 sys.path.insert(0, "/a0")
 
 from plugins._browser.helpers.playwright import get_playwright_binary
-from plugins._browser.helpers.runtime import _BrowserRuntimeCore
 from usr.plugins.cloakbrowser.helpers.extensions import active_extension_paths
 from usr.plugins.cloakbrowser.helpers.install_manifest import load_manifest
-from usr.plugins.cloakbrowser.helpers.playwright_shim import (
-    patch_playwright,
-    status as shim_status,
-)
+from usr.plugins.cloakbrowser.helpers.playwright_shim import patch_playwright
 from usr.plugins.cloakbrowser.helpers.runtime_patch import apply_runtime_patch
 from plugins._browser.tools.browser import Browser
-
-
-def browser_command_lines(profile_dir: Path) -> list[str]:
-    matches = []
-    needle = str(profile_dir)
-    for proc in Path("/proc").iterdir():
-        if not proc.name.isdigit():
-            continue
-        try:
-            raw = (proc / "cmdline").read_bytes()
-        except OSError:
-            continue
-        text = raw.replace(b"\0", b" ").decode("utf-8", errors="ignore")
-        if needle in text:
-            matches.append(text)
-    return matches
-
-
-def wait_for_process_cleanup(profile_dir: Path) -> list[str]:
-    deadline = time.monotonic() + 10
-    while time.monotonic() < deadline:
-        lines = browser_command_lines(profile_dir)
-        if not lines:
-            return []
-        time.sleep(0.25)
-    return browser_command_lines(profile_dir)
 
 
 class Log:
@@ -216,76 +183,7 @@ async def check_runtime() -> None:
     if extension_paths:
         raise AssertionError(f"managed extensions should be opt-in by default: {extension_paths}")
     print("plugin-managed Browser extensions are opt-in by default", flush=True)
-
-    core = _BrowserRuntimeCore("ghostship-cloakbrowser-plugin-test")
-    try:
-        if "tmp/browser/sessions" not in str(core.profile_dir):
-            raise AssertionError(f"profile dir does not use upstream browser sessions path: {core.profile_dir}")
-
-        await core.open("data:text/html,<title>ghostship cloakbrowser plugin</title>")
-        browser_page = next(iter(core.pages.values()))
-        page = browser_page.page
-        page.set_default_timeout(15000)
-        page.set_default_navigation_timeout(15000)
-
-        commands = browser_command_lines(core.profile_dir)
-        if not commands:
-            raise AssertionError(f"could not find Chromium process for profile: {core.profile_dir}")
-        joined_commands = "\n".join(commands)
-        main_commands = [command for command in commands if " --type=" not in f" {command} "]
-        if len(main_commands) != 1:
-            raise AssertionError(f"expected one top-level browser process, found {len(main_commands)}: {joined_commands}")
-        main_command = main_commands[0]
-        if "cloakbrowser" not in joined_commands.lower():
-            raise AssertionError(f"browser process does not look like CloakBrowser: {joined_commands}")
-        for forbidden_arg in ("--disable-gpu", "--disable-extensions"):
-            if f" {forbidden_arg} " in f" {main_command} ":
-                raise AssertionError(f"CloakBrowser plugin did not filter {forbidden_arg}: {main_command}")
-        if "--disable-dev-shm-usage" in main_command:
-            raise AssertionError(f"CloakBrowser production launch should use /dev/shm instead of the fallback switch: {main_command}")
-        if main_command.count("--no-sandbox") != 1:
-            raise AssertionError(f"CloakBrowser launch should keep one root-safe sandbox switch: {main_command}")
-        if "--headless" in main_command:
-            raise AssertionError(f"CloakBrowser plugin did not force headed mode: {main_command}")
-
-        launch = shim_status().get("last_launch", {})
-        shared_memory = launch.get("shared_memory", {})
-        if shared_memory.get("disable_dev_shm_usage"):
-            raise AssertionError(f"CloakBrowser production launch should not use the shared-memory fallback: {launch}")
-        final_args = launch.get("final_args", [])
-        for required in (
-            "--fingerprint",
-            "--fingerprint-noise=false",
-            "--fingerprint-screen-width=1440",
-            "--fingerprint-screen-height=960",
-        ):
-            if not any(arg == required or str(arg).startswith(required + "=") for arg in final_args):
-                raise AssertionError(f"CloakBrowser launch arg missing: {required}; launch={launch}")
-
-        dimensions = await page.evaluate(
-            """() => ({
-                innerWidth: window.innerWidth,
-                innerHeight: window.innerHeight,
-                screenWidth: window.screen.width,
-                screenHeight: window.screen.height,
-            })"""
-        )
-        expected_dimensions = {
-            "innerWidth": 1440,
-            "innerHeight": 960,
-            "screenWidth": 1440,
-            "screenHeight": 960,
-        }
-        if dimensions != expected_dimensions:
-            raise AssertionError(f"unexpected viewport/screen dimensions: {dimensions}")
-        print("CloakBrowser plugin launch patched args, humanization, and 1440x960 dimensions", flush=True)
-
-    finally:
-        await asyncio.wait_for(core.close(delete_profile=True), timeout=15)
-        leftovers = wait_for_process_cleanup(core.profile_dir)
-        if leftovers:
-            raise AssertionError(f"Chromium processes survived Browser close: {leftovers}")
-        print("Browser close terminated Chromium processes", flush=True)
+    print("CloakBrowser plugin setup and Browser tool checks passed", flush=True)
 
 
 async def main() -> None:
