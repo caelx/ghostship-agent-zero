@@ -345,10 +345,9 @@ def maybe_execute(client: "ApiClient", plugin_name: str, artifact_name: str) -> 
 
 
 def run_execute_cli(client: "ApiClient", plugin_name: str, artifact_name: str) -> dict[str, Any]:
-    # Agent Zero's execute API has a fixed argv. CloakBrowser needs --force in
-    # the disabled-state reconciliation check so the lifecycle path remains
-    # fast and does not tear down dependencies before the enabled check.
-    action = "status --json" if "disabled" in artifact_name else "reconcile --force --json"
+    # Agent Zero's execute API has a fixed argv. Run the script directly so the
+    # lifecycle can exercise both disabled and enabled reconcile paths.
+    action = cloakbrowser_execute_action(artifact_name)
     script = f"""
 import json, subprocess, sys
 from helpers import plugins
@@ -361,6 +360,12 @@ print(json.dumps({{'ok': result.returncode == 0, 'exit_code': result.returncode,
     payload = json.loads(result.stdout)
     write_json(artifact_name, payload)
     return payload
+
+
+def cloakbrowser_execute_action(artifact_name: str) -> str:
+    if "disabled" in artifact_name:
+        return "reconcile --json"
+    return "reconcile --force --json"
 
 
 def verify_provider(container: str, plugin_name: str, provider_id: str) -> None:

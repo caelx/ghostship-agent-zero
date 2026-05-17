@@ -37,3 +37,13 @@ def test_cloakbrowser_small_scope_runs_light_smokes(monkeypatch) -> None:
         "python execute.py status --json > /artifacts/plugin-status-after-lifecycle.json",
         "python ci/run_runtime_smoke.py",
     ]
+
+
+def test_cloakbrowser_execute_action_reconciles_disabled_state() -> None:
+    lifecycle = load_lifecycle()
+    assert lifecycle.cloakbrowser_execute_action("execute-disabled.json") == "reconcile --json"
+
+
+def test_cloakbrowser_execute_action_forces_enabled_state() -> None:
+    lifecycle = load_lifecycle()
+    assert lifecycle.cloakbrowser_execute_action("execute-enabled.json") == "reconcile --force --json"
