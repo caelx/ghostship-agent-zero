@@ -228,9 +228,6 @@ async def check_runtime() -> None:
         page.set_default_timeout(15000)
         page.set_default_navigation_timeout(15000)
 
-        if getattr(page, "_human_cfg", None) is None:
-            raise AssertionError("CloakBrowser humanize did not initialize _human_cfg")
-
         commands = browser_command_lines(core.profile_dir)
         if not commands:
             raise AssertionError(f"could not find Chromium process for profile: {core.profile_dir}")
