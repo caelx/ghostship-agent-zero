@@ -201,7 +201,10 @@ async def check_runtime() -> None:
     apply_runtime_patch()
     patch_playwright()
 
-    playwright_binary = get_playwright_binary(full_browser=True)
+    try:
+        playwright_binary = get_playwright_binary(full_browser=True)
+    except TypeError:
+        playwright_binary = get_playwright_binary()
     if not playwright_binary:
         raise AssertionError("Agent Zero Playwright binary was not found")
     if not should_patch_launch({"executable_path": str(playwright_binary)}):
