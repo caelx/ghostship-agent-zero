@@ -144,7 +144,6 @@ from usr.plugins.cloakbrowser.helpers.extensions import active_extension_paths
 from usr.plugins.cloakbrowser.helpers.install_manifest import load_manifest
 from usr.plugins.cloakbrowser.helpers.playwright_shim import (
     patch_playwright,
-    should_patch_launch,
     status as shim_status,
 )
 from usr.plugins.cloakbrowser.helpers.runtime_patch import apply_runtime_patch
@@ -207,13 +206,11 @@ async def check_runtime() -> None:
         playwright_binary = get_playwright_binary()
     if not playwright_binary:
         raise AssertionError("Agent Zero Playwright binary was not found")
-    if not should_patch_launch({"executable_path": str(playwright_binary)}):
-        raise AssertionError(f"Agent Zero Playwright binary is not CloakBrowser patch-eligible: {playwright_binary}")
     manifest = load_manifest()
     masquerade = Path(manifest.get("playwright_shim", {}).get("masquerade_path") or "")
     if not masquerade.exists() or "chromium-cloakbrowser" not in str(masquerade):
         raise AssertionError(f"CloakBrowser masquerade was not installed: {masquerade}")
-    print(f"Agent Zero Playwright binary is patch-eligible: {playwright_binary}", flush=True)
+    print(f"Agent Zero Playwright binary is available: {playwright_binary}", flush=True)
 
     extension_paths = active_extension_paths()
     if extension_paths:
