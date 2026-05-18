@@ -39,7 +39,7 @@ def main(argv: list[str] | None = None) -> int:
     if args.command in {"enable", "disable"}:
         _set_plugin_enabled(args.command == "enable")
         status = collect_status()
-        result = {"ok": True, "command": args.command, "status": status}
+        result = {"ok": True, "command": args.command, "status": status, **_lifecycle_state()}
         _print_result(result, json_output=args.json_output, human=format_lifecycle_report)
         return 0
 
@@ -50,8 +50,8 @@ def main(argv: list[str] | None = None) -> int:
             payload = {
                 "ok": bool(result.get("ok")),
                 "command": "reconcile",
-                "desired_state": "disabled",
                 "uninstall": result,
+                **_lifecycle_state(),
             }
             _print_result(payload, json_output=args.json_output, human=format_lifecycle_report)
             return 0 if payload["ok"] else 1
@@ -65,15 +65,16 @@ def main(argv: list[str] | None = None) -> int:
         result = {
             "ok": bool(setup_result.get("ok")),
             "command": "reconcile" if args.command == "reconcile" else "run",
-            "desired_state": "enabled",
             "setup_result": setup_result,
             "status": status,
+            **_lifecycle_state(),
         }
         _print_result(result, json_output=args.json_output, human=format_run_report)
         return 0 if result["ok"] else 1
 
     if args.command == "status":
         result = collect_status()
+        result.update(_lifecycle_state())
         _print_result(result, json_output=args.json_output, human=format_status_report)
         return 0
 
@@ -108,6 +109,15 @@ def _is_plugin_enabled() -> bool:
     except Exception:
         return True
     return any(_enabled_plugin_name(item) == "bitwarden" for item in (enabled or []))
+
+
+def _lifecycle_state() -> dict[str, Any]:
+    enabled = _is_plugin_enabled()
+    return {
+        "enabled": enabled,
+        "toggle_state": "enabled" if enabled else "disabled",
+        "desired_state": "enabled" if enabled else "disabled",
+    }
 
 
 def _enabled_plugin_name(item: Any) -> str:

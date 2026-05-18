@@ -36,6 +36,9 @@
   enabled providers now fail status when missing from `ProviderManager`, local
   endpoint configs render during install/update/startup, and mutable NVIDIA
   runtime state is no longer tracked in source.
+- Added provider `setup`/`repair` Execute aliases for image build compatibility,
+  normalized provider IDs from vanilla `id`/`value` fields, and exposed
+  toggle-derived lifecycle state in Bitwarden and CloakBrowser status JSON.
 
 ## 0.1.0 - 2026-05-06
 

@@ -9,6 +9,7 @@
 - This repo is a thin Docker overlay on `agent0ai/agent-zero:latest`, not a full fork.
 - Ghostship plugin sources are full-history subtrees under `plugins/a0-*`; keep Docker defaults pointed at remote plugin repos unless explicitly testing local sources.
 - Build-time Agent Zero plugins use `scripts/setup-agent-zero-plugin.sh`; pass plugin name plus repo env var so the shared helper installs the configured Git source from `/a0` with `/a0` first on `PYTHONPATH`, resolves the upstream plugin dir with Agent Zero helpers, then runs plugin setup there.
+- Provider plugin `execute.py` files must accept `setup` because the shared Docker build helper invokes that command after install.
 - Real upstream API execution in `agent0ai/agent-zero:latest` showed custom plugins land at `/a0/usr/plugins/<name>` when the UI runs from `/a0`; tests should fail if helper imports resolve `/git/agent-zero/usr/plugins`.
 - Do not hardcode, prefer, migrate, clean, or otherwise manage old Ghostship-created duplicate plugin roots for CloakBrowser or any other plugin.
 - CloakBrowser cannot rely on process-local monkey patches as the primary integration path because WebUI plugin Execute runs `execute.py` in a separate subprocess, while the Browser tool runs inside the already-started Agent Zero server process. Patching Playwright or `_BrowserRuntimeCore` inside Execute only changes the short-lived Execute subprocess and does not affect Browser launches from the WebUI/server.

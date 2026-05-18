@@ -246,6 +246,8 @@ def test_status_json_preserves_status_payload(monkeypatch, capsys) -> None:
 
     assert payload["plugin"] == "bitwarden"
     assert payload["setup"]["status"] == "setup"
+    assert payload["desired_state"] == "enabled"
+    assert payload["toggle_state"] == "enabled"
 
 
 def install_enabled_plugins_stub(monkeypatch, entries) -> None:

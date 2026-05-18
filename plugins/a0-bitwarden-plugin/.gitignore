@@ -1,7 +1,13 @@
 __pycache__/
 .pytest_cache/
 .ruff_cache/
+.mypy_cache/
 .venv/
+.coverage
+htmlcov/
+build/
+dist/
 artifacts/
+*.pyc
 .bitwarden/
 .bitwarden-install-manifest.json
