@@ -30,6 +30,8 @@
   plugin entries are normalized before uninstall decisions.
 - Restored strict NVIDIA catalog `--check` drift failures while still writing a
   candidate artifact for refresh review.
+- Synced CloakBrowser's Browser tool smoke with current Agent Zero agent config
+  expectations and refreshed the NVIDIA validated model catalog snapshot.
 
 ## 0.1.0 - 2026-05-06
 
