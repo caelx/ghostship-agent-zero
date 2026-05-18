@@ -42,6 +42,8 @@
 - Made provider disable/uninstall idempotent, kept provider status JSON
   structured outside Agent Zero, and preserved Bitwarden's `run` command
   identity when disabled-state reconciliation runs.
+- Updated CloakBrowser to a V10 `_browser` runtime source bootstrap that repairs
+  markerless partial runtime patches left by older installs.
 
 ## 0.1.0 - 2026-05-06
 

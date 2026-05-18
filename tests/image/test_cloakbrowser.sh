@@ -104,7 +104,7 @@ for name in ("ghostship_cloakbrowser_playwright_shim.py", "ghostship_cloakbrowse
 
 runtime_source = inspect.getsource(runtime)
 required = (
-    "CLOAKBROWSER_SOURCE_PATCH_V9",
+    "CLOAKBROWSER_SOURCE_PATCH_V10",
     "def _cloakbrowser_source_runtime():",
     "find_plugin_dir(\"cloakbrowser\")",
     "Browser context could not open a new tab; restarting.",
