@@ -32,6 +32,10 @@
   candidate artifact for refresh review.
 - Synced CloakBrowser's Browser tool smoke with current Agent Zero agent config
   expectations and refreshed the NVIDIA validated model catalog snapshot.
+- Aligned provider plugin Execute status with Agent Zero provider registration:
+  enabled providers now fail status when missing from `ProviderManager`, local
+  endpoint configs render during install/update/startup, and mutable NVIDIA
+  runtime state is no longer tracked in source.
 
 ## 0.1.0 - 2026-05-06
 

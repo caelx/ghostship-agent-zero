@@ -16,6 +16,8 @@ git@github.com:caelx/a0-ollama-cloud-provider-plugin.git
 
 After installation, enable `Ollama Cloud` in the Agent Zero plugin UI. The plugin registers the chat provider `ollama_cloud` through `conf/model_providers.yaml`.
 
+`conf/model_providers.yaml` is rendered during install, update, and Agent Zero startup so local plugin API endpoints use the current Agent Zero web UI port. Run `python execute.py status --json` inside the installed plugin directory to verify `installed`, `enabled`, `provider_config_present`, and `provider_registered`.
+
 ## Configuration
 
 Set this environment variable before starting Agent Zero:
@@ -27,7 +29,7 @@ export OLLAMA_CLOUD_API_KEY=your_api_key_here
 The provider catalog endpoint is local to the plugin:
 
 ```text
-http://127.0.0.1:5000/api/plugins/provider_ollama_cloud/models
+http://127.0.0.1:<Agent Zero web UI port>/api/plugins/provider_ollama_cloud/models
 ```
 
 That endpoint reads Ollama's live `/api/tags` catalog and restricts the presented chat models to Ollama library entries with all three filters: `cloud`, `tools`, and `thinking`.

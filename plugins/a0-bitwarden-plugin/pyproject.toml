@@ -1,6 +1,6 @@
 [project]
 name = "a0-bitwarden-plugin"
-version = "1.0.2"
+version = "1.0.3"
 description = "Agent Zero plugin for Bitwarden CLI, MCP, and credential-vault skills"
 requires-python = ">=3.11"
 dependencies = []

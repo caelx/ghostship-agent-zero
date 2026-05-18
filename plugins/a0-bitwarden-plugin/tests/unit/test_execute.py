@@ -2,7 +2,9 @@ from __future__ import annotations
 
 import json
 import sys
+import tomllib
 import types
+from pathlib import Path
 from types import SimpleNamespace
 from typing import Any
 
@@ -269,3 +271,18 @@ def test_is_plugin_enabled_accepts_object_entries(monkeypatch) -> None:
 def test_is_plugin_enabled_rejects_other_normalized_entries(monkeypatch) -> None:
     install_enabled_plugins_stub(monkeypatch, [{"name": "cloakbrowser"}, SimpleNamespace(name="other")])
     assert execute._is_plugin_enabled() is False
+
+
+def test_plugin_and_package_versions_match() -> None:
+    root = Path(__file__).resolve().parents[2]
+    plugin_version = _yaml_value(root / "plugin.yaml", "version")
+    pyproject = tomllib.loads((root / "pyproject.toml").read_text(encoding="utf-8"))
+    assert pyproject["project"]["version"] == plugin_version
+
+
+def _yaml_value(path: Path, key: str) -> str:
+    prefix = f"{key}:"
+    for line in path.read_text(encoding="utf-8").splitlines():
+        if line.startswith(prefix):
+            return line.split(":", 1)[1].strip().strip('"').strip("'")
+    raise AssertionError(f"{key} not found in {path}")

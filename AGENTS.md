@@ -25,3 +25,5 @@
 - Do not leave Ghostship helper scripts in the final image unless runtime behavior truly requires them.
 - Work in feature branches with pull requests; do not merge until PR CI passes.
 - Keep changes surgical so upstream Agent Zero updates stay easy to adopt.
+- When upstream plugin branches lag overlay subtree fixes, sync only intended
+  changed files instead of overwriting the whole subtree snapshot.
