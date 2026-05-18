@@ -46,14 +46,22 @@ def main(argv: list[str] | None = None) -> int:
         collect_status = plugin_import("helpers.diagnostics").collect_status
 
         status = collect_status()
+        if args.json:
+            status.update(_lifecycle_state())
         _print_result(status if args.json else format_status(status))
         return 0
     if args.command in {"enable", "disable"}:
+        from plugin_imports import plugin_import
+
+        collect_status = plugin_import("helpers.diagnostics").collect_status
+
         _set_plugin_enabled(args.command == "enable")
+        status = collect_status()
         payload = {
             "ok": True,
             "command": args.command,
-            "toggle_state": "enabled" if args.command == "enable" else "disabled",
+            "status": status,
+            **_lifecycle_state(),
         }
         _print_result(json.dumps(payload, indent=2, sort_keys=True) if args.json else format_lifecycle(payload))
         return 0
@@ -65,10 +73,10 @@ def main(argv: list[str] | None = None) -> int:
         result = uninstall(remove_extensions=False)
         payload = {
             "ok": bool(result.get("ok")),
-            "command": "reconcile" if args.command == "reconcile" else args.command,
-            "desired_state": "disabled",
+            "command": args.command,
             "disabled": True,
             "uninstall": result,
+            **_lifecycle_state(),
         }
         _print_result(json.dumps(payload, indent=2, sort_keys=True) if args.json else format_uninstall(result))
         return 0 if result.get("ok") else 1
@@ -88,14 +96,14 @@ def main(argv: list[str] | None = None) -> int:
         status = collect_status()
         payload = {
             "ok": bool(result.get("ok")) and setup_readiness(status)["ok"],
-            "command": "reconcile" if args.command == "reconcile" else args.command,
-            "desired_state": "enabled",
+            "command": args.command,
             "started": _iso(started),
             "finished": _iso(finished),
             "elapsed_seconds": round(time.monotonic() - monotonic_start, 2),
             "setup": result,
             "status": status,
             "readiness": setup_readiness(status),
+            **_lifecycle_state(),
         }
         _print_result(json.dumps(payload, indent=2, sort_keys=True) if args.json else format_setup(payload))
         return 0 if payload["ok"] else 1
@@ -139,15 +147,15 @@ def _is_plugin_enabled() -> bool:
     if enabled is None:
         return True
     for item in enabled:
-        if item == "cloakbrowser":
+        if item == PLUGIN_NAME:
             return True
         if isinstance(item, dict):
             name = item.get("name") or item.get("id") or item.get("plugin_name")
-            if name == "cloakbrowser":
+            if name == PLUGIN_NAME:
                 return True
         else:
             name = getattr(item, "name", None) or getattr(item, "id", None)
-            if name == "cloakbrowser":
+            if name == PLUGIN_NAME:
                 return True
 
     return False
@@ -162,6 +170,15 @@ def _set_plugin_enabled(enabled: bool) -> None:
         from helpers import plugins
 
         plugins.toggle_plugin(PLUGIN_NAME, enabled)
+
+
+def _lifecycle_state() -> dict[str, Any]:
+    enabled = _is_plugin_enabled()
+    return {
+        "enabled": enabled,
+        "toggle_state": "enabled" if enabled else "disabled",
+        "desired_state": "enabled" if enabled else "disabled",
+    }
 
 
 @contextmanager
@@ -262,13 +279,15 @@ def format_uninstall(result: dict[str, Any]) -> str:
     return "\n".join(lines)
 
 
-def format_lifecycle(result: dict[str, Any]) -> str:
+def format_lifecycle(payload: dict[str, Any]) -> str:
+    status = payload.get("status", {})
     return "\n".join(
         [
             "CloakBrowser lifecycle",
-            f"Command: {result.get('command', 'unknown')}",
-            f"Toggle: {result.get('toggle_state', 'unknown')}",
-            f"Result: {'complete' if result.get('ok') else 'failed'}",
+            f"Command: {payload.get('command', 'unknown')}",
+            f"Toggle: {payload.get('toggle_state', 'unknown')}",
+            "",
+            format_status(status),
         ]
     )
 

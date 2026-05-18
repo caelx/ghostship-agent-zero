@@ -2,7 +2,9 @@ from __future__ import annotations
 
 import json
 import sys
+import tomllib
 import types
+from pathlib import Path
 from types import SimpleNamespace
 from typing import Any
 
@@ -244,6 +246,8 @@ def test_status_json_preserves_status_payload(monkeypatch, capsys) -> None:
 
     assert payload["plugin"] == "bitwarden"
     assert payload["setup"]["status"] == "setup"
+    assert payload["desired_state"] == "enabled"
+    assert payload["toggle_state"] == "enabled"
 
 
 def install_enabled_plugins_stub(monkeypatch, entries) -> None:
@@ -269,3 +273,38 @@ def test_is_plugin_enabled_accepts_object_entries(monkeypatch) -> None:
 def test_is_plugin_enabled_rejects_other_normalized_entries(monkeypatch) -> None:
     install_enabled_plugins_stub(monkeypatch, [{"name": "cloakbrowser"}, SimpleNamespace(name="other")])
     assert execute._is_plugin_enabled() is False
+
+
+def test_disabled_run_json_preserves_run_command(monkeypatch, capsys) -> None:
+    def uninstall():
+        return {"ok": True, "restart_required": False}
+
+    monkeypatch.setattr(
+        plugin_imports,
+        "plugin_import",
+        lambda name: SimpleNamespace(
+            uninstall=uninstall,
+            collect_status=status_result,
+        ),
+    )
+    monkeypatch.setattr(execute, "_is_plugin_enabled", lambda: False)
+
+    assert execute.main(["run", "--json"]) == 0
+    payload = json.loads(capsys.readouterr().out)
+    assert payload["command"] == "run"
+    assert payload["desired_state"] == "disabled"
+
+
+def test_plugin_and_package_versions_match() -> None:
+    root = Path(__file__).resolve().parents[2]
+    plugin_version = _yaml_value(root / "plugin.yaml", "version")
+    pyproject = tomllib.loads((root / "pyproject.toml").read_text(encoding="utf-8"))
+    assert pyproject["project"]["version"] == plugin_version
+
+
+def _yaml_value(path: Path, key: str) -> str:
+    prefix = f"{key}:"
+    for line in path.read_text(encoding="utf-8").splitlines():
+        if line.startswith(prefix):
+            return line.split(":", 1)[1].strip().strip('"').strip("'")
+    raise AssertionError(f"{key} not found in {path}")
