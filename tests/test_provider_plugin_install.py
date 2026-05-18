@@ -89,6 +89,16 @@ def test_setup_script_supports_plugins_without_execute_hook() -> None:
             raise AssertionError(f"plugin setup script must not materialize plugins under /a0/usr/plugins: {snippet}")
 
 
+def test_provider_execute_accepts_default_setup_args() -> None:
+    for plugin_name in PROVIDERS:
+        execute_source = (ROOT / "plugins" / f"a0-{plugin_name.removeprefix('provider_').replace('_', '-')}-provider-plugin" / "execute.py").read_text(
+            encoding="utf-8"
+        )
+        for snippet in ('"setup"', '"--noninteractive"'):
+            if snippet not in execute_source:
+                raise AssertionError(f"{plugin_name} execute.py missing default setup compatibility: {snippet}")
+
+
 def test_no_bundled_provider_plugin_sources_remain() -> None:
     bundled_root = ROOT / "usr" / "plugins"
     if not bundled_root.exists():
@@ -103,6 +113,7 @@ def main() -> int:
     test_provider_install_script_uses_agent_zero_plugin_installer()
     test_provider_repos_are_configured_as_build_args()
     test_setup_script_supports_plugins_without_execute_hook()
+    test_provider_execute_accepts_default_setup_args()
     test_no_bundled_provider_plugin_sources_remain()
     print("provider plugin install tests passed")
     return 0
