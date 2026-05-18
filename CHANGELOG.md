@@ -44,6 +44,8 @@
   identity when disabled-state reconciliation runs.
 - Updated CloakBrowser to a V10 `_browser` runtime source bootstrap that repairs
   markerless partial runtime patches left by older installs.
+- Routed current Agent Zero `/tmp/playwright/chromium-*` Browser launches
+  through CloakBrowser in the overlay subtree.
 
 ## 0.1.0 - 2026-05-06
 
