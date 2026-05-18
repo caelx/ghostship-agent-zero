@@ -10,7 +10,7 @@ from pathlib import Path
 
 
 async def main() -> int:
-    sys.path.insert(0, "/git/agent-zero")
+    sys.path.insert(0, "/a0")
     from usr.plugins.cloakbrowser.helpers.config import get_config
     from usr.plugins.cloakbrowser.helpers.extensions import (
         install_configured_extensions,

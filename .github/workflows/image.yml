@@ -39,7 +39,15 @@ jobs:
         id: plugin-revisions
         run: |
           resolve() {
-            git ls-remote "$1" HEAD | awk '{print $1}'
+            repo="$1"
+            if [ "${GITHUB_EVENT_NAME:-}" = "pull_request" ] && [ -n "${GITHUB_HEAD_REF:-}" ]; then
+              ref="$(git ls-remote "$repo" "refs/heads/${GITHUB_HEAD_REF}" | awk '{print $1}' | head -n1)"
+              if [ -n "$ref" ]; then
+                echo "$ref"
+                return
+              fi
+            fi
+            git ls-remote "$repo" HEAD | awk '{print $1}'
           }
           {
             echo "bitwarden=$(resolve https://github.com/caelx/a0-bitwarden-plugin.git)"
@@ -118,7 +126,15 @@ jobs:
         id: plugin-revisions
         run: |
           resolve() {
-            git ls-remote "$1" HEAD | awk '{print $1}'
+            repo="$1"
+            if [ "${GITHUB_EVENT_NAME:-}" = "pull_request" ] && [ -n "${GITHUB_HEAD_REF:-}" ]; then
+              ref="$(git ls-remote "$repo" "refs/heads/${GITHUB_HEAD_REF}" | awk '{print $1}' | head -n1)"
+              if [ -n "$ref" ]; then
+                echo "$ref"
+                return
+              fi
+            fi
+            git ls-remote "$repo" HEAD | awk '{print $1}'
           }
           {
             echo "bitwarden=$(resolve https://github.com/caelx/a0-bitwarden-plugin.git)"

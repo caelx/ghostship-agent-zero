@@ -13,7 +13,18 @@ def main(argv: list[str] | None = None) -> int:
         "command",
         nargs="?",
         default="run",
-        choices=["run", "setup", "status", "repair", "uninstall"],
+        choices=[
+            "run",
+            "reconcile",
+            "install",
+            "setup",
+            "update",
+            "status",
+            "repair",
+            "enable",
+            "disable",
+            "uninstall",
+        ],
         help="'run' is the Execute button flow: setup/repair, then status",
     )
     parser.add_argument("--json", action="store_true", dest="json_output")
@@ -25,7 +36,25 @@ def main(argv: list[str] | None = None) -> int:
 
     collect_status = plugin_import("helpers.diagnostics").collect_status
 
-    if args.command == "run":
+    if args.command in {"enable", "disable"}:
+        _set_plugin_enabled(args.command == "enable")
+        status = collect_status()
+        result = {"ok": True, "command": args.command, "status": status}
+        _print_result(result, json_output=args.json_output, human=format_lifecycle_report)
+        return 0
+
+    if args.command in {"run", "reconcile"}:
+        if not _is_plugin_enabled():
+            uninstall = plugin_import("helpers.uninstall").uninstall
+            result = uninstall()
+            payload = {
+                "ok": bool(result.get("ok")),
+                "command": "reconcile",
+                "desired_state": "disabled",
+                "uninstall": result,
+            }
+            _print_result(payload, json_output=args.json_output, human=format_lifecycle_report)
+            return 0 if payload["ok"] else 1
         setup_plugin = plugin_import("helpers.setup").setup_plugin
         setup_result = setup_plugin(
             noninteractive=True,
@@ -35,7 +64,8 @@ def main(argv: list[str] | None = None) -> int:
         status = collect_status()
         result = {
             "ok": bool(setup_result.get("ok")),
-            "command": "run",
+            "command": "reconcile" if args.command == "reconcile" else "run",
+            "desired_state": "enabled",
             "setup_result": setup_result,
             "status": status,
         }
@@ -47,13 +77,14 @@ def main(argv: list[str] | None = None) -> int:
         _print_result(result, json_output=args.json_output, human=format_status_report)
         return 0
 
-    if args.command in {"setup", "repair"}:
+    if args.command in {"install", "setup", "update", "repair"}:
         setup_plugin = plugin_import("helpers.setup").setup_plugin
         result = setup_plugin(
             noninteractive=args.noninteractive,
             skip_system_deps=args.skip_system_deps,
-            repair=args.command == "repair",
+            repair=args.command in {"repair", "update"},
         )
+        result["command"] = args.command
         _print_result(result, json_output=args.json_output, human=format_setup_report)
         return 0 if result.get("ok") else 1
 
@@ -64,6 +95,44 @@ def main(argv: list[str] | None = None) -> int:
         return 0 if result.get("ok") else 1
 
     return 2
+
+
+def _is_plugin_enabled() -> bool:
+    try:
+        from plugin_imports import ensure_agent_zero_path
+
+        ensure_agent_zero_path()
+        from helpers import plugins
+
+        enabled = plugins.get_enabled_plugins(None)
+    except Exception:
+        return True
+    return any(_enabled_plugin_name(item) == "bitwarden" for item in (enabled or []))
+
+
+def _enabled_plugin_name(item: Any) -> str:
+    if isinstance(item, str):
+        return item
+    if isinstance(item, dict):
+        for key in ("name", "id", "plugin_name"):
+            value = item.get(key)
+            if value:
+                return str(value)
+        return ""
+    for attr in ("name", "id", "plugin_name"):
+        value = getattr(item, attr, None)
+        if value:
+            return str(value)
+    return ""
+
+
+def _set_plugin_enabled(enabled: bool) -> None:
+    from plugin_imports import ensure_agent_zero_path
+
+    ensure_agent_zero_path()
+    from helpers import plugins
+
+    plugins.toggle_plugin("bitwarden", enabled)
 
 
 def _print_result(result: dict[str, Any], *, json_output: bool, human) -> None:
@@ -109,6 +178,20 @@ def format_uninstall_report(result: dict[str, Any]) -> str:
         preserved_items = [key.replace("_", " ") for key, value in preserved.items() if value]
         if preserved_items:
             lines.append(f"Preserved: {', '.join(preserved_items)}")
+    return "\n".join(lines)
+
+
+def format_lifecycle_report(result: dict[str, Any]) -> str:
+    if "uninstall" in result:
+        return format_uninstall_report(_dict(result.get("uninstall")))
+    status = _dict(result.get("status"))
+    lines = [
+        "Bitwarden Plugin Lifecycle",
+        "",
+        f"Command: {result.get('command', 'unknown')}",
+        f"Result: {_result_word(result)}",
+    ]
+    lines.extend(_status_lines(status))
     return "\n".join(lines)
 
 

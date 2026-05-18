@@ -14,7 +14,7 @@ ZIPERTO_URL = "https://www.ziperto.com/"
 
 
 async def main() -> int:
-    sys.path.insert(0, "/git/agent-zero")
+    sys.path.insert(0, "/a0")
     from plugins._browser.helpers.runtime import _BrowserRuntimeCore
     from usr.plugins.cloakbrowser.helpers.extensions import active_extension_paths
     from usr.plugins.cloakbrowser.helpers.playwright_shim import patch_playwright, status

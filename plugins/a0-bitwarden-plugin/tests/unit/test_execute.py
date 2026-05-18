@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import json
+import sys
+import types
 from types import SimpleNamespace
 from typing import Any
 
@@ -242,3 +244,28 @@ def test_status_json_preserves_status_payload(monkeypatch, capsys) -> None:
 
     assert payload["plugin"] == "bitwarden"
     assert payload["setup"]["status"] == "setup"
+
+
+def install_enabled_plugins_stub(monkeypatch, entries) -> None:
+    helpers = types.ModuleType("helpers")
+    plugins = types.ModuleType("helpers.plugins")
+    plugins.get_enabled_plugins = lambda _scope: entries
+    helpers.plugins = plugins
+    monkeypatch.setattr(plugin_imports, "ensure_agent_zero_path", lambda: None)
+    monkeypatch.setitem(sys.modules, "helpers", helpers)
+    monkeypatch.setitem(sys.modules, "helpers.plugins", plugins)
+
+
+def test_is_plugin_enabled_accepts_dict_entries(monkeypatch) -> None:
+    install_enabled_plugins_stub(monkeypatch, [{"name": "bitwarden"}])
+    assert execute._is_plugin_enabled() is True
+
+
+def test_is_plugin_enabled_accepts_object_entries(monkeypatch) -> None:
+    install_enabled_plugins_stub(monkeypatch, [SimpleNamespace(name="bitwarden")])
+    assert execute._is_plugin_enabled() is True
+
+
+def test_is_plugin_enabled_rejects_other_normalized_entries(monkeypatch) -> None:
+    install_enabled_plugins_stub(monkeypatch, [{"name": "cloakbrowser"}, SimpleNamespace(name="other")])
+    assert execute._is_plugin_enabled() is False

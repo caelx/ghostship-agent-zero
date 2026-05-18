@@ -42,6 +42,8 @@ def test_plugin_install_script_uses_agent_zero_plugin_installer() -> None:
     source = INSTALL_SCRIPT.read_text(encoding="utf-8")
     required = (
         "from plugins._plugin_installer.helpers.install import install_from_git",
+        'os.chdir("/a0")',
+        'sys.path.insert(0, "/a0")',
         "parser.add_argument(\"plugin_name\")",
         "parser.add_argument(\"repo_env\")",
         "repo = os.environ[args.repo_env]",
@@ -64,22 +66,19 @@ def test_plugin_install_script_uses_agent_zero_plugin_installer() -> None:
 def test_plugin_setup_script_uses_upstream_plugin_dir() -> None:
     source = SETUP_SCRIPT.read_text(encoding="utf-8")
     required = (
-        'plugin_dir="$(cd /a0 && /opt/venv-a0/bin/python /tmp/ghostship/install-agent-zero-plugin.py "$plugin_name" "$repo_env")"',
+        "/ins/copy_A0.sh local",
+        'plugin_dir="$(cd /a0 && PYTHONPATH=/a0 /opt/venv-a0/bin/python /tmp/ghostship/install-agent-zero-plugin.py "$plugin_name" "$repo_env")"',
         'revision="$(awk -F= -v key="$plugin_name"',
         'git -C "$plugin_dir" fetch --depth=1 origin "$revision"',
         'git -C "$plugin_dir" checkout --detach FETCH_HEAD',
         'cd "$plugin_dir"',
         "if [ -f execute.py ]; then",
-        'PYTHONPATH=/git/agent-zero:/a0:"$plugin_dir" /opt/venv-a0/bin/python execute.py "$@"',
+        'PYTHONPATH=/a0:"$plugin_dir" /opt/venv-a0/bin/python execute.py "$@"',
     )
     for snippet in required:
         if snippet not in source:
             raise AssertionError(f"plugin setup script missing snippet: {snippet}")
-    forbidden = (
-        'target="/a0/usr/plugins/$plugin_name"',
-        'cp -a "$plugin_dir" "$target"',
-        'mkdir -p /a0/usr/plugins',
-    )
+    forbidden = ('PYTHONPATH=/git/agent-zero', 'cp -a "$plugin_dir"')
     for snippet in forbidden:
         if snippet in source:
             raise AssertionError(f"plugin setup script must not materialize plugins under /a0/usr/plugins: {snippet}")
