@@ -39,6 +39,9 @@
 - Added provider `setup`/`repair` Execute aliases for image build compatibility,
   normalized provider IDs from vanilla `id`/`value` fields, and exposed
   toggle-derived lifecycle state in Bitwarden and CloakBrowser status JSON.
+- Made provider disable/uninstall idempotent, kept provider status JSON
+  structured outside Agent Zero, and preserved Bitwarden's `run` command
+  identity when disabled-state reconciliation runs.
 
 ## 0.1.0 - 2026-05-06
 

@@ -49,7 +49,7 @@ def main(argv: list[str] | None = None) -> int:
             result = uninstall()
             payload = {
                 "ok": bool(result.get("ok")),
-                "command": "reconcile",
+                "command": args.command,
                 "uninstall": result,
                 **_lifecycle_state(),
             }
