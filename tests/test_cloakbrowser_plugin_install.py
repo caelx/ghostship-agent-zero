@@ -72,7 +72,9 @@ def test_plugin_setup_script_uses_upstream_plugin_dir() -> None:
         'git -C "$plugin_dir" fetch --depth=1 origin "$revision"',
         'git -C "$plugin_dir" checkout --detach FETCH_HEAD',
         'cd "$plugin_dir"',
-        "if [ -f execute.py ]; then",
+        "if [ ! -f execute.py ]; then",
+        'echo "required setup hook missing: $plugin_dir/execute.py" >&2',
+        "exit 1",
         'PYTHONPATH=/a0:"$plugin_dir" /opt/venv-a0/bin/python execute.py "$@"',
     )
     for snippet in required:

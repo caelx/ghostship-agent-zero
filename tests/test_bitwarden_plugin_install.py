@@ -52,8 +52,10 @@ def test_plugin_setup_script_uses_upstream_plugin_dir() -> None:
     required = (
         "/ins/copy_A0.sh local",
         'plugin_dir="$(cd /a0 && PYTHONPATH=/a0 /opt/venv-a0/bin/python /tmp/ghostship/install-agent-zero-plugin.py "$plugin_name" "$repo_env")"',
-        "if [ -f execute.py ]; then",
         'cd "$plugin_dir"',
+        "if [ ! -f execute.py ]; then",
+        'echo "required setup hook missing: $plugin_dir/execute.py" >&2',
+        "exit 1",
         'PYTHONPATH=/a0:"$plugin_dir" /opt/venv-a0/bin/python execute.py "$@"',
     )
     for snippet in required:

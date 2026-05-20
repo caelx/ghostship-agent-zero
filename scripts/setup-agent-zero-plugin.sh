@@ -30,6 +30,8 @@ if [ -n "$revision" ] && [ "$revision" != "latest" ] && [ -d "$plugin_dir/.git" 
 fi
 
 cd "$plugin_dir"
-if [ -f execute.py ]; then
-  PYTHONPATH=/a0:"$plugin_dir" /opt/venv-a0/bin/python execute.py "$@"
+if [ ! -f execute.py ]; then
+  echo "required setup hook missing: $plugin_dir/execute.py" >&2
+  exit 1
 fi
+PYTHONPATH=/a0:"$plugin_dir" /opt/venv-a0/bin/python execute.py "$@"

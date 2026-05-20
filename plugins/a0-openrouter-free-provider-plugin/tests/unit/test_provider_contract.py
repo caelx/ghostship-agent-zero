@@ -64,8 +64,8 @@ def test_provider_specific_contracts(monkeypatch, tmp_path):
         assert m.filter_free_models(m.extract_model_ids({"data":[{"id":"big-pickle"},{"id":"custom-free"},{"id":"paid"}]})) == (["big-pickle","custom-free"], {"unknown_free_status":1})
     elif PLUGIN_NAME == "provider_openrouter_free":
         m=importlib.import_module("usr.plugins.provider_openrouter_free.helpers.filter")
-        payload={"data":[{"id":"free","pricing":{"prompt":"0","completion":"0"},"supported_parameters":["tools"],"architecture":{"input_modalities":["text"],"output_modalities":["text"]},"expiration_date":None},{"id":"paid","pricing":{"prompt":"1","completion":"0"},"supported_parameters":["tools"],"architecture":{"input_modalities":["text"],"output_modalities":["text"]},"expiration_date":None}]}
-        assert m.filter_models(payload) == (["free"], {"paid":1})
+        payload={"data":[{"id":"free","pricing":{"prompt":"0","completion":"0"},"supported_parameters":["tools"],"architecture":{"input_modalities":["text"],"output_modalities":["text"]},"expiration_date":None},{"id":"future","pricing":{"prompt":"0","completion":"0"},"supported_parameters":["tools"],"architecture":{"input_modalities":["text"],"output_modalities":["text"]},"expiration_date":"2999-01-01T00:00:00Z"},{"id":"expired","pricing":{"prompt":"0","completion":"0"},"supported_parameters":["tools"],"architecture":{"input_modalities":["text"],"output_modalities":["text"]},"expiration_date":"2000-01-01T00:00:00Z"},{"id":"paid","pricing":{"prompt":"1","completion":"0"},"supported_parameters":["tools"],"architecture":{"input_modalities":["text"],"output_modalities":["text"]},"expiration_date":None}]}
+        assert m.filter_models(payload) == (["free","future"], {"expired":1,"paid":1})
     elif PLUGIN_NAME == "provider_nvidia_build_free":
         catalog=importlib.import_module("usr.plugins.provider_nvidia_build_free.helpers.catalog"); state=importlib.import_module("usr.plugins.provider_nvidia_build_free.helpers.state"); probe=importlib.import_module("usr.plugins.provider_nvidia_build_free.helpers.probe")
         state_path=tmp_path/"state.json"; checked_path=tmp_path/"validated.json"

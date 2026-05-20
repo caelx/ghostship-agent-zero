@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections import Counter
+from datetime import datetime, timezone
 from typing import Any
 
 
@@ -18,6 +19,29 @@ def all_present_pricing_fields_are_zero(pricing: dict[str, Any]) -> bool:
     if not isinstance(pricing, dict) or not pricing:
         return False
     return all(_is_zero(value) for value in pricing.values())
+
+
+def expiration_is_expired(value: Any, now: datetime | None = None) -> bool:
+    if value is None:
+        return False
+
+    now = now or datetime.now(timezone.utc)
+    if isinstance(value, (int, float)):
+        return datetime.fromtimestamp(value, timezone.utc) <= now
+    if isinstance(value, str):
+        text = value.strip()
+        if not text:
+            return False
+        if text.endswith("Z"):
+            text = text[:-1] + "+00:00"
+        try:
+            parsed = datetime.fromisoformat(text)
+        except ValueError:
+            return True
+        if parsed.tzinfo is None:
+            parsed = parsed.replace(tzinfo=timezone.utc)
+        return parsed <= now
+    return True
 
 
 def eligible_model(model: dict[str, Any]) -> tuple[bool, str | None]:
@@ -45,7 +69,7 @@ def eligible_model(model: dict[str, Any]) -> tuple[bool, str | None]:
     if not isinstance(output_modalities, list) or "text" not in output_modalities:
         return False, "non_text_output"
 
-    if model.get("expiration_date") is not None:
+    if expiration_is_expired(model.get("expiration_date")):
         return False, "expired"
 
     return True, None

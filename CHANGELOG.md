@@ -46,6 +46,9 @@
   markerless partial runtime patches left by older installs.
 - Routed current Agent Zero `/tmp/playwright/chromium-*` Browser launches
   through CloakBrowser in the overlay subtree.
+- Addressed stale review findings by failing fast on missing plugin setup hooks,
+  passing Bitwarden CLI env names through Compose, and syncing CloakBrowser,
+  NVIDIA, and OpenRouter lifecycle fixes.
 
 ## 0.1.0 - 2026-05-06
 
