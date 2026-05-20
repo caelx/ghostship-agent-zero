@@ -71,13 +71,15 @@ def test_provider_repos_are_configured_as_build_args() -> None:
             raise AssertionError(f"Dockerfile missing provider repo: {repo}")
 
 
-def test_setup_script_supports_plugins_without_execute_hook() -> None:
+def test_setup_script_requires_execute_hook() -> None:
     source = SETUP_SCRIPT.read_text(encoding="utf-8")
     required = (
         "/ins/copy_A0.sh local",
         'plugin_dir="$(cd /a0 && PYTHONPATH=/a0 /opt/venv-a0/bin/python /tmp/ghostship/install-agent-zero-plugin.py "$plugin_name" "$repo_env")"',
-        "if [ -f execute.py ]; then",
         'cd "$plugin_dir"',
+        "if [ ! -f execute.py ]; then",
+        'echo "required setup hook missing: $plugin_dir/execute.py" >&2',
+        "exit 1",
         'PYTHONPATH=/a0:"$plugin_dir" /opt/venv-a0/bin/python execute.py "$@"',
     )
     for snippet in required:
@@ -112,7 +114,7 @@ def main() -> int:
     test_dockerfile_installs_provider_plugins_from_git()
     test_provider_install_script_uses_agent_zero_plugin_installer()
     test_provider_repos_are_configured_as_build_args()
-    test_setup_script_supports_plugins_without_execute_hook()
+    test_setup_script_requires_execute_hook()
     test_provider_execute_accepts_default_setup_args()
     test_no_bundled_provider_plugin_sources_remain()
     print("provider plugin install tests passed")

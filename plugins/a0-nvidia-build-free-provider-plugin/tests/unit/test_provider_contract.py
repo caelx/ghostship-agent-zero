@@ -151,7 +151,7 @@ def test_nvidia_catalog_check_keeps_existing_retained_streak_stable():
     assert result["report"]["retained_models"]["model/a"]["failure_streak"] == 2
 def test_nvidia_catalog_reports_expected_model_failure_reason():
     refresh=load_catalog_refresh()
-    model="deepseek-ai/deepseek-v4-flash"
+    model="minimaxai/minimax-m2.7"
     result=refresh.merge_probe_results([model], [(model, False, "no_tool_call")], {"models":[]})
     assert result["report"]["expected_model_failures"] == {model: "no_tool_call"}
 def test_nvidia_catalog_check_fails_on_drift_without_rewriting_catalog(monkeypatch, tmp_path):
@@ -206,3 +206,24 @@ def test_nvidia_runtime_meta_exposes_failed_models(monkeypatch, tmp_path):
     response=asyncio.run(catalog.model_response())
     assert response["meta"]["failed_models"]["model/a"]["reason"] == "timeout"
     assert response["meta"]["failed_models"]["model/a"]["next_retry_at"] == 21700
+
+def test_nvidia_worker_running_gate_expires_stale_worker():
+    install_package_alias()
+    state=importlib.import_module("usr.plugins.provider_nvidia_build_free.helpers.state")
+    cache=state.default_state()
+    cache["worker"]["running"] = True
+    cache["worker"]["last_scan_started_at"] = 100
+    assert state.should_start_worker(cache, ["new/live"], now=100 + state.WORKER_STALE_MIN_SECONDS - 1) is False
+    assert state.should_start_worker(cache, ["new/live"], now=100 + state.WORKER_STALE_MIN_SECONDS) is True
+
+def test_nvidia_worker_stale_gate_scales_with_catalog_size():
+    install_package_alias()
+    state=importlib.import_module("usr.plugins.provider_nvidia_build_free.helpers.state")
+    live_ids=[f"model/{index}" for index in range(200)]
+    stale_seconds=state.worker_stale_seconds(live_ids)
+    assert stale_seconds > state.WORKER_STALE_MIN_SECONDS
+    cache=state.default_state()
+    cache["worker"]["running"] = True
+    cache["worker"]["last_scan_started_at"] = 100
+    assert state.should_start_worker(cache, live_ids, now=100 + state.WORKER_STALE_MIN_SECONDS) is False
+    assert state.should_start_worker(cache, live_ids, now=100 + stale_seconds) is True

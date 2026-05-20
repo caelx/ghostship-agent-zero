@@ -5,6 +5,8 @@ services:
       context: .
     image: ghostship-agent-zero:local
     environment:
+      BW_CLIENTID: ${BW_CLIENTID:-}
+      BW_CLIENTSECRET: ${BW_CLIENTSECRET:-}
       BW_CLIENT_ID: ${BW_CLIENT_ID:-}
       BW_CLIENT_SECRET: ${BW_CLIENT_SECRET:-}
       BW_PASSWORD: ${BW_PASSWORD:-}
