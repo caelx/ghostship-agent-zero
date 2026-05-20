@@ -114,7 +114,7 @@ def main() -> int:
     test_dockerfile_installs_provider_plugins_from_git()
     test_provider_install_script_uses_agent_zero_plugin_installer()
     test_provider_repos_are_configured_as_build_args()
-    test_setup_script_supports_plugins_without_execute_hook()
+    test_setup_script_requires_execute_hook()
     test_provider_execute_accepts_default_setup_args()
     test_no_bundled_provider_plugin_sources_remain()
     print("provider plugin install tests passed")
