@@ -95,7 +95,8 @@ uv run --with pytest python -m pytest -s tests/unit
 Run Docker-backed integration tests:
 
 ```bash
-bash ci/run_agent_zero_integration.sh
+docker build -t bitwarden-agent-zero-ci -f ci/agent-zero.Dockerfile .
+BITWARDEN_AGENT_ZERO_IMAGE=bitwarden-agent-zero-ci bash ci/run_agent_zero_integration.sh
 ```
 
 Default tests do not require a live Bitwarden account. Optional live smoke tests must be explicitly enabled with `BITWARDEN_LIVE_TEST=1` and appropriate CI secrets.
