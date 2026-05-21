@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Resynced vendored plugin subtrees with their current standalone repository
+  `main` branches and restored clean subtree pull behavior.
 - Added full-history Git subtrees for the Ghostship `a0-*` plugin repositories under `plugins/`.
 - Added a helper for pulling from and pushing to the plugin subtree SSH remotes.
 - Moved Agent Zero provider plugins for Ollama Cloud, OpenCode Go, NVIDIA Build Free, OpenCode Zen Free, and OpenRouter Free into standalone plugin repositories.
