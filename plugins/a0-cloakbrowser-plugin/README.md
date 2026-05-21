@@ -23,7 +23,7 @@ https://github.com/caelx/a0-cloakbrowser-plugin.git
 ```
 
 ```bash
-plugin_dir="$(cd /a0 && PYTHONPATH=/a0 python - <<'PY'
+plugin_dir="$(PYTHONPATH=/git/agent-zero python - <<'PY'
 from helpers import plugins
 print(plugins.find_plugin_dir("cloakbrowser"))
 PY

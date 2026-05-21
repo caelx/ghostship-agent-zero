@@ -230,12 +230,19 @@ def normalize_config(raw: dict[str, Any] | None) -> dict[str, Any]:
     adv["extra_args"] = _string_list(adv.get("extra_args"))
     adv["filter_default_playwright_args"] = _bool(adv.get("filter_default_playwright_args"), True)
     adv["disable_shadow_dom_init_patch"] = _bool(adv.get("disable_shadow_dom_init_patch"), True)
-    adv["patch_runtime_file_if_needed"] = _bool(adv.get("patch_runtime_file_if_needed"), True)
     adv.pop("preserve_headed_placeholder_page", None)
+    adv.pop("patch_runtime_file_if_needed", None)
 
     ext = cfg["extensions"]
     for key, default in DEFAULT_CONFIG["extensions"].items():
         ext[key] = _bool(ext.get(key), bool(default))
+    for name in (
+        "ublock_origin_lite",
+        "i_still_dont_care_about_cookies",
+        "bypass_paywalls_clean",
+    ):
+        ext.pop(f"install_{name}", None)
+        ext.pop(f"update_{name}_on_setup", None)
 
     ubol = cfg["ublock_origin_lite"]
     ubol["filtering_mode"] = str(ubol.get("filtering_mode") or "complete").strip()
