@@ -139,8 +139,15 @@ install_github_tools() {
 install_nix() {
   if ! command -v nix >/dev/null 2>&1; then
     export NIX_CONFIG="filter-syscalls = false"
-    curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix \
-      | sh -s -- install linux --no-confirm --init none
+    tmp="$(mktemp -d)"
+    trap 'rm -rf "$tmp"' EXIT
+    curl --http1.1 --proto '=https' --tlsv1.2 -fsSL \
+      --retry 5 --retry-all-errors --retry-delay 2 \
+      -o "$tmp/determinate-nix-installer.sh" \
+      https://install.determinate.systems/nix
+    sh "$tmp/determinate-nix-installer.sh" install linux --no-confirm --init none
+    rm -rf "$tmp"
+    trap - EXIT
   fi
 
   mkdir -p /etc/nix
