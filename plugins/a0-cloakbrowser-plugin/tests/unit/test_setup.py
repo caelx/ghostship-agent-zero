@@ -57,6 +57,63 @@ def test_successful_setup_reconciles_browser_lifecycle(monkeypatch, tmp_path):
     ]
 
 
+def test_setup_fails_when_agent_zero_restart_is_still_required(monkeypatch, tmp_path):
+    cloakbrowser = types.ModuleType("cloakbrowser")
+    cloakbrowser.ensure_binary = lambda: "/bin/cloakbrowser"
+    monkeypatch.setitem(sys.modules, "cloakbrowser", cloakbrowser)
+    monkeypatch.setattr(setup.importlib.metadata, "version", lambda name: "1.0.0")
+    monkeypatch.setattr(
+        setup,
+        "get_config",
+        lambda: {"runtime": {"cloakbrowser_cache_dir": "/tmp/cache"}, "extensions": {}},
+    )
+    monkeypatch.setattr(setup, "apply_environment", lambda cfg: None)
+    monkeypatch.setattr(setup, "load_manifest", lambda: {})
+    saved = []
+    monkeypatch.setattr(
+        setup, "save_manifest", lambda manifest: saved.append(dict(manifest)) or manifest
+    )
+    monkeypatch.setattr(setup, "install_system_dependencies", lambda noninteractive: {"ok": True})
+    monkeypatch.setattr(setup, "install_python_dependencies", lambda **kwargs: {"ok": True})
+    monkeypatch.setattr(setup, "ensure_masquerade", lambda binary: tmp_path / "chrome")
+    monkeypatch.setattr(
+        setup, "ensure_display", lambda cfg, manifest: {"ok": True, "display": ":99"}
+    )
+    monkeypatch.setattr(setup, "install_configured_extensions", lambda cfg, manifest: [])
+    monkeypatch.setattr(setup, "sync_browser_extension_paths", lambda cfg: [])
+    monkeypatch.setattr(setup, "verify_extension_reconciliation", lambda cfg: {"ok": True})
+    monkeypatch.setattr(
+        setup,
+        "patch_runtime_source",
+        lambda manifest: {"applied": True, "already_patched": False},
+    )
+    monkeypatch.setattr(setup, "validate_runtime_patch", lambda manifest: {"ok": True})
+    monkeypatch.setattr(setup, "verify_browser_launch", lambda: {"ok": True})
+    monkeypatch.setattr(
+        setup,
+        "reconcile_after_setup",
+        lambda cfg, source_patch: {
+            "browser_processes_stopped": {"matched": []},
+            "agent_zero_restart": {"needed": True, "restarted": False, "reason": "not_found"},
+            "restart_required": True,
+        },
+    )
+    monkeypatch.setattr(setup, "managed_extension_paths", lambda: {})
+    monkeypatch.setattr(setup, "disable_managed_extension_paths", lambda: [])
+    monkeypatch.setattr(setup, "remove_masquerade", lambda path=None: True)
+    monkeypatch.setattr(
+        setup, "remove_supervisor_config_if_owned", lambda manifest: {"removed": ""}
+    )
+    monkeypatch.setattr(setup, "remove_direct_xvfb_if_owned", lambda manifest: {"removed": False})
+
+    result = setup.setup_plugin(noninteractive=True)
+
+    assert result["ok"] is False
+    assert "Agent Zero restart required" in result["error"]
+    assert saved[-1]["setup_status"] == "failed"
+    assert saved[-1]["last_repair_status"] == "failed"
+
+
 def test_setup_failure_rolls_back_plugin_owned_state(monkeypatch, tmp_path):
     cloakbrowser = types.ModuleType("cloakbrowser")
     cloakbrowser.ensure_binary = lambda: "/bin/cloakbrowser"

@@ -100,6 +100,11 @@ def setup_plugin(*, noninteractive: bool = False, skip_system_deps: bool = False
         manifest = load_manifest()
         manifest["launch_verification"] = launch_verification
         lifecycle = reconcile_after_setup(cfg, source_patch)
+        manifest["lifecycle"] = lifecycle
+        if lifecycle.get("restart_required"):
+            restart = lifecycle.get("agent_zero_restart") or {}
+            reason = restart.get("reason") or "agent_zero_restart_required"
+            raise RuntimeError(f"Agent Zero restart required after runtime patch: {reason}")
     except Exception as exc:
         record_warning(manifest, f"Setup failed after dependency install: {exc}")
         rollback = _rollback_failed_setup(manifest, previous_manifest=previous_manifest)
@@ -125,8 +130,6 @@ def setup_plugin(*, noninteractive: bool = False, skip_system_deps: bool = False
         "applied_in_setup": False,
         "applies_when": "Browser tool execution or smoke test process",
     }
-    manifest["lifecycle"] = lifecycle
-
     mark_setup(manifest)
     save_manifest(manifest)
     return {
