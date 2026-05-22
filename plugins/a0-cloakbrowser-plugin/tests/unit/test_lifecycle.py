@@ -113,6 +113,25 @@ def test_restart_agent_zero_reports_manual_restart_when_program_missing(monkeypa
     assert result["reason"] == "agent_zero_program_not_found"
 
 
+def test_restart_agent_zero_does_not_select_unrelated_web_sidecar(monkeypatch):
+    monkeypatch.setattr(lifecycle.shutil, "which", lambda name: "/usr/bin/supervisorctl")
+    monkeypatch.setattr(
+        lifecycle.subprocess,
+        "run",
+        lambda command, **kwargs: SimpleNamespace(
+            returncode=0,
+            stdout="websocket RUNNING pid 2\napi-server RUNNING pid 3\n",
+            stderr="",
+        ),
+    )
+
+    result = lifecycle.restart_agent_zero_if_needed(True)
+
+    assert result["restarted"] is False
+    assert result["restart_required"] is True
+    assert result["reason"] == "agent_zero_program_not_found"
+
+
 def test_reconcile_restarts_only_when_source_patch_changed(monkeypatch):
     restarts = []
     monkeypatch.setattr(

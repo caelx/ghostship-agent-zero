@@ -190,6 +190,7 @@ def _pid_alive(pid: int) -> bool:
 
 
 def _agent_zero_supervisor_program(output: str) -> str:
+    candidates: list[str] = []
     for line in output.splitlines():
         parts = line.split()
         if len(parts) < 2 or parts[1] != "RUNNING":
@@ -198,6 +199,14 @@ def _agent_zero_supervisor_program(output: str) -> str:
         lowered = name.lower()
         if "cloakbrowser_xvfb" in lowered:
             continue
-        if any(token in lowered for token in ("agent", "a0", "web", "server")):
+        candidates.append(name)
+    exact_names = {"agent-zero", "agent_zero", "agentzero", "a0", "a0_server", "a0-server"}
+    for name in candidates:
+        normalized = name.split(":", 1)[0].lower()
+        if normalized in exact_names:
+            return name
+    for name in candidates:
+        normalized = name.split(":", 1)[0].lower()
+        if normalized.startswith(("agent-zero", "agent_zero")):
             return name
     return ""
