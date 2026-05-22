@@ -4,12 +4,11 @@ set -euo pipefail
 source "$(dirname "$0")/lib.sh"
 
 echo "checking Bitwarden plugin is not installed by default"
-run_bash_in_image '. /ins/setup_venv.sh local && cd /a0 && PYTHONPATH=/a0 python - <<'"'"'PY'"'"'
-from helpers import plugins
-
-plugin_dir = plugins.find_plugin_dir("bitwarden")
-if plugin_dir and str(plugin_dir).startswith("/a0/usr/plugins/"):
-    raise AssertionError(f"Bitwarden plugin should not be custom-installed by default: {plugin_dir}")
-
-print("Bitwarden plugin is absent by default", flush=True)
-PY'
+run_bash_in_image '
+plugin_dir="/a0/usr/plugins/bitwarden"
+if [ -e "$plugin_dir" ]; then
+  echo "Bitwarden plugin should not be custom-installed by default: ${plugin_dir}" >&2
+  exit 1
+fi
+echo "Bitwarden plugin is absent by default"
+'
