@@ -198,7 +198,7 @@ def _agent_zero_supervisor_program(output: str) -> str:
     candidates: list[str] = []
     for line in output.splitlines():
         parts = line.split()
-        if len(parts) < 2 or parts[1] != "RUNNING":
+        if len(parts) < 2:
             continue
         name = parts[0]
         lowered = name.lower()

@@ -52,13 +52,46 @@ def test_verify_cleans_up_runtime_when_open_fails(monkeypatch):
     assert runtime.closed is True
 
 
+def test_verify_ignores_runtime_close_error_after_success(monkeypatch):
+    manifest = {"last_launch": {}}
+    browser_calls = []
+    runtime = _FakeRuntime(close_error=RuntimeError("already closed"))
+
+    def on_open():
+        manifest["last_launch"] = {
+            "patched": True,
+            "launcher": "cloakbrowser.launch_persistent_context_async",
+            "binary": "/opt/cloakbrowser/chrome",
+            "final_args": ["--fingerprint=abc"],
+        }
+
+    _install_fake_browser_modules(
+        monkeypatch,
+        browser_calls=browser_calls,
+        runtime=runtime,
+        on_open=on_open,
+    )
+    monkeypatch.setattr(verify, "load_manifest", lambda: dict(manifest))
+    monkeypatch.setattr(verify, "save_manifest", lambda value: manifest.update(value))
+
+    result = verify.verify_browser_launch()
+
+    assert result["ok"] is True
+    assert runtime.close_attempted is True
+
+
 class _FakeRuntime:
-    def __init__(self):
+    def __init__(self, close_error: Exception | None = None):
         self.closed = False
+        self.close_attempted = False
+        self.close_error = close_error
         self._closed = False
 
     async def call(self, name, **kwargs):
         if name == "close":
+            self.close_attempted = True
+            if self.close_error:
+                raise self.close_error
             self.closed = True
 
 
@@ -68,6 +101,7 @@ def _install_fake_browser_modules(
     browser_calls: list[str],
     runtime: _FakeRuntime,
     open_message: str = "ok",
+    on_open=None,
 ) -> None:
     runtime_module = types.ModuleType("plugins._browser.helpers.runtime")
     runtime_module._runtime_lock = threading.RLock()
@@ -87,6 +121,8 @@ def _install_fake_browser_modules(
         async def execute(self, *, action, **kwargs):
             browser_calls.append(action)
             if action == "open":
+                if on_open:
+                    on_open()
                 return SimpleNamespace(message=open_message)
             return SimpleNamespace(message="ok")
 

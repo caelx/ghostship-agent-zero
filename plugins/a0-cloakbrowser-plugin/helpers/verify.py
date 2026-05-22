@@ -74,7 +74,10 @@ async def _verify_browser_launch() -> dict[str, Any]:
             pass
         runtime = await browser_runtime.get_runtime(agent.context.id, create=False)
         if runtime:
-            await runtime.call("close", delete_profile=False)
+            try:
+                await runtime.call("close", delete_profile=False)
+            except Exception:
+                pass
             runtime._closed = True
             with browser_runtime._runtime_lock:
                 browser_runtime._runtimes.pop(agent.context.id, None)
