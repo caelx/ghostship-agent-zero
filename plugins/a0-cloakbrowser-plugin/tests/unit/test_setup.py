@@ -4,6 +4,56 @@ import types
 from helpers import setup
 
 
+def test_successful_setup_reconciles_browser_lifecycle(monkeypatch, tmp_path):
+    cloakbrowser = types.ModuleType("cloakbrowser")
+    cloakbrowser.ensure_binary = lambda: "/bin/cloakbrowser"
+    monkeypatch.setitem(sys.modules, "cloakbrowser", cloakbrowser)
+    monkeypatch.setattr(setup.importlib.metadata, "version", lambda name: "1.0.0")
+    monkeypatch.setattr(
+        setup,
+        "get_config",
+        lambda: {"runtime": {"cloakbrowser_cache_dir": "/tmp/cache"}, "extensions": {}},
+    )
+    monkeypatch.setattr(setup, "apply_environment", lambda cfg: None)
+    monkeypatch.setattr(setup, "load_manifest", lambda: {})
+    monkeypatch.setattr(setup, "save_manifest", lambda manifest: manifest)
+    monkeypatch.setattr(setup, "install_system_dependencies", lambda noninteractive: {"ok": True})
+    monkeypatch.setattr(setup, "install_python_dependencies", lambda: {"ok": True})
+    monkeypatch.setattr(setup, "ensure_masquerade", lambda binary: tmp_path / "chrome")
+    monkeypatch.setattr(
+        setup, "ensure_display", lambda cfg, manifest: {"ok": True, "display": ":99"}
+    )
+    monkeypatch.setattr(setup, "install_configured_extensions", lambda cfg, manifest: [])
+    monkeypatch.setattr(setup, "sync_browser_extension_paths", lambda cfg: [])
+    monkeypatch.setattr(
+        setup,
+        "patch_runtime_source",
+        lambda manifest: {"applied": True, "already_patched": False},
+    )
+    lifecycle_calls = []
+    monkeypatch.setattr(
+        setup,
+        "reconcile_after_setup",
+        lambda cfg, source_patch: lifecycle_calls.append((cfg, source_patch))
+        or {
+            "browser_processes_stopped": {"matched": []},
+            "agent_zero_restart": {"needed": True, "restarted": True},
+            "restart_required": False,
+        },
+    )
+
+    result = setup.setup_plugin(noninteractive=True)
+
+    assert result["ok"] is True
+    assert result["lifecycle"]["agent_zero_restart"]["restarted"] is True
+    assert lifecycle_calls == [
+        (
+            {"runtime": {"cloakbrowser_cache_dir": "/tmp/cache"}, "extensions": {}},
+            {"applied": True, "already_patched": False},
+        )
+    ]
+
+
 def test_setup_failure_rolls_back_plugin_owned_state(monkeypatch, tmp_path):
     cloakbrowser = types.ModuleType("cloakbrowser")
     cloakbrowser.ensure_binary = lambda: "/bin/cloakbrowser"

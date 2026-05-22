@@ -77,10 +77,10 @@ Plugin config, toggle, execute, and delete use `POST /api/plugins`:
 `delete_plugin` calls the plugin uninstall hook before removing the custom
 plugin directory.
 
-## Build-Time Rule
+## Manual Install Helper Rule
 
-Ghostship image builds may install plugins before runtime, but they must mirror
-the API implementation:
+Ghostship image builds do not install Agent Zero plugins by default. When using
+repo helper scripts for manual installs, mirror the API implementation:
 
 1. Make sure `/a0` contains the Agent Zero runtime tree.
 2. Run from `cd /a0` with `/a0` first on `PYTHONPATH`.

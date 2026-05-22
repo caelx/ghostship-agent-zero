@@ -6,6 +6,9 @@
   through CloakBrowser.
 - Bump the Agent Zero `_browser` runtime source bootstrap to V10 and repair
   markerless partial runtime patches left by older installs.
+- Stop stale Agent Zero-managed Chrome/CloakBrowser processes after setup and
+  restart Agent Zero through supervisor only when the `_browser` runtime source
+  patch changed during that Execute run.
 - Bump the Agent Zero `_browser` runtime source bootstrap to V9 and guard the
   current content-helper init script behind `disable_shadow_dom_init_patch`.
 - Add Agent Zero lifecycle aliases for install/update/reconcile/enable/disable

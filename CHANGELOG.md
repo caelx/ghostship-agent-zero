@@ -6,6 +6,9 @@
   `main` branches and restored clean subtree pull behavior.
 - Made the Nix installer download retryable and forced HTTP/1.1 to avoid
   transient CI HTTP/2 stream resets during image builds.
+- Stopped installing Agent Zero plugins by default in the Docker image; Bitwarden, CloakBrowser, and provider plugins are now manual installs.
+- Removed the vendored `a0-ollama-cloud-provider-plugin` subtree because Ollama Cloud is integrated upstream in Agent Zero.
+- Updated CloakBrowser manual setup to stop stale Agent Zero-managed browser processes and restart Agent Zero only when the `_browser` runtime patch changed during Execute.
 - Added full-history Git subtrees for the Ghostship `a0-*` plugin repositories under `plugins/`.
 - Added a helper for pulling from and pushing to the plugin subtree SSH remotes.
 - Moved Agent Zero provider plugins for Ollama Cloud, OpenCode Go, NVIDIA Build Free, OpenCode Zen Free, and OpenRouter Free into standalone plugin repositories.

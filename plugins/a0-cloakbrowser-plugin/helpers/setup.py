@@ -14,6 +14,7 @@ from .extensions import (
     sync_browser_extension_paths,
 )
 from .install_manifest import load_manifest, mark_setup, record_warning, save_manifest
+from .lifecycle import reconcile_after_setup
 from .seed_playwright import ensure_masquerade, remove_masquerade
 from .source_patch import patch_runtime_source
 from .xvfb import ensure_display, remove_direct_xvfb_if_owned, remove_supervisor_config_if_owned
@@ -74,6 +75,7 @@ def setup_plugin(*, noninteractive: bool = False, skip_system_deps: bool = False
         extension_installs = install_configured_extensions(cfg, manifest)
         active_paths = sync_browser_extension_paths(cfg)
         source_patch = patch_runtime_source(manifest)
+        lifecycle = reconcile_after_setup(cfg, source_patch)
     except Exception as exc:
         record_warning(manifest, f"Setup failed after dependency install: {exc}")
         rollback = _rollback_failed_setup(manifest, previous_manifest=previous_manifest)
@@ -99,6 +101,7 @@ def setup_plugin(*, noninteractive: bool = False, skip_system_deps: bool = False
         "applied_in_setup": False,
         "applies_when": "Browser tool execution or smoke test process",
     }
+    manifest["lifecycle"] = lifecycle
 
     mark_setup(manifest)
     save_manifest(manifest)
@@ -112,6 +115,7 @@ def setup_plugin(*, noninteractive: bool = False, skip_system_deps: bool = False
         "active_extension_paths": active_paths,
         "runtime_patch": runtime_patch,
         "playwright_shim": shim_patch,
+        "lifecycle": lifecycle,
         "manifest": manifest,
     }
 

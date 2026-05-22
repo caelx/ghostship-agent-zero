@@ -240,6 +240,7 @@ def format_setup(payload: dict[str, Any]) -> str:
         _format_display(setup.get("display", {}), status.get("display", {})),
         _format_effective_location(status.get("effective_location", {})),
         _format_extensions(setup.get("extension_actions") or setup.get("manifest", {}).get("extension_actions", []), status),
+        _format_setup_lifecycle(setup.get("lifecycle") or setup.get("manifest", {}).get("lifecycle", {})),
         "",
         _format_readiness(readiness),
     ]
@@ -363,6 +364,25 @@ def _format_extensions(actions: list[dict[str, Any]], status: dict[str, Any]) ->
     active_paths = status.get("extensions", {}).get("active_paths") or []
     lines.append(f"Active extension paths synced: {len(active_paths)}")
     return "\n".join(lines)
+
+
+def _format_setup_lifecycle(lifecycle: dict[str, Any]) -> str:
+    if not lifecycle:
+        return "Lifecycle: not recorded"
+    stopped = lifecycle.get("browser_processes_stopped") or {}
+    restart = lifecycle.get("agent_zero_restart") or {}
+    matched = len(stopped.get("matched") or [])
+    terminated = len(stopped.get("terminated") or [])
+    killed = len(stopped.get("killed") or [])
+    if restart.get("needed"):
+        restart_text = "restarted" if restart.get("restarted") else "restart required"
+    else:
+        restart_text = "not needed"
+    return (
+        "Lifecycle: "
+        f"stale browser processes matched={matched}, terminated={terminated}, killed={killed}; "
+        f"Agent Zero restart={restart_text}"
+    )
 
 
 def _format_readiness(readiness: dict[str, Any]) -> str:

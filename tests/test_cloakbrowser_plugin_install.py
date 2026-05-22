@@ -13,15 +13,15 @@ SETUP_SCRIPT = SCRIPTS / "setup-agent-zero-plugin.sh"
 PLUGIN_REPO = "https://github.com/caelx/a0-cloakbrowser-plugin.git"
 
 
-def test_dockerfile_uses_agent_zero_plugin_installer() -> None:
+def test_dockerfile_does_not_install_cloakbrowser_by_default() -> None:
     source = DOCKERFILE.read_text(encoding="utf-8")
-    required = (
+    forbidden = (
         f"ARG CLOAKBROWSER_PLUGIN_REPO={PLUGIN_REPO}",
         "/tmp/ghostship/setup-agent-zero-plugin.sh cloakbrowser CLOAKBROWSER_PLUGIN_REPO setup --noninteractive --force",
     )
-    for snippet in required:
-        if snippet not in source:
-            raise AssertionError(f"Dockerfile missing plugin install snippet: {snippet}")
+    for snippet in forbidden:
+        if snippet in source:
+            raise AssertionError(f"Dockerfile must not install CloakBrowser by default: {snippet}")
     forbidden = (
         "/tmp/ghostship/patch-browser-ui.py",
         "__browserPageKeyHandled",
@@ -124,7 +124,7 @@ def test_no_ghostship_cloakbrowser_patch_scripts_remain() -> None:
 
 
 def main() -> int:
-    test_dockerfile_uses_agent_zero_plugin_installer()
+    test_dockerfile_does_not_install_cloakbrowser_by_default()
     test_compose_sets_large_shared_memory_for_cloakbrowser()
     test_plugin_install_script_uses_agent_zero_plugin_installer()
     test_plugin_setup_script_uses_upstream_plugin_dir()
