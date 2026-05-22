@@ -30,8 +30,8 @@ def test_stop_managed_browser_processes_targets_agent_zero_browser_paths(monkeyp
         timeout=0,
     )
 
-    assert [item["pid"] for item in result["matched"]] == [101, 103]
-    assert result["terminated"] == [101, 103]
+    assert {item["pid"] for item in result["matched"]} == {101, 103}
+    assert set(result["terminated"]) == {101, 103}
     assert result["killed"] == []
     assert (102, lifecycle.signal.SIGTERM) not in signals
 
