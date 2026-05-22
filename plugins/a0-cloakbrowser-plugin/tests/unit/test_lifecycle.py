@@ -68,6 +68,32 @@ def test_restart_agent_zero_uses_discovered_supervisor_program(monkeypatch):
     assert result["restart_required"] is False
 
 
+def test_restart_agent_zero_parses_status_stdout_when_supervisor_returns_nonzero(monkeypatch):
+    commands = []
+    monkeypatch.setattr(lifecycle.shutil, "which", lambda name: "/usr/bin/supervisorctl")
+
+    def fake_run(command, **kwargs):
+        commands.append(command)
+        if command == ["/usr/bin/supervisorctl", "status"]:
+            return SimpleNamespace(
+                returncode=3,
+                stdout="agent-zero RUNNING pid 1\nworker STOPPED not started\n",
+                stderr="worker stopped",
+            )
+        return SimpleNamespace(returncode=0, stdout="agent-zero: restarted\n", stderr="")
+
+    monkeypatch.setattr(lifecycle.subprocess, "run", fake_run)
+
+    result = lifecycle.restart_agent_zero_if_needed(True)
+
+    assert commands == [
+        ["/usr/bin/supervisorctl", "status"],
+        ["/usr/bin/supervisorctl", "restart", "agent-zero"],
+    ]
+    assert result["restarted"] is True
+    assert result["restart_required"] is False
+
+
 def test_restart_agent_zero_reports_manual_restart_when_program_missing(monkeypatch):
     monkeypatch.setattr(lifecycle.shutil, "which", lambda name: "/usr/bin/supervisorctl")
     monkeypatch.setattr(

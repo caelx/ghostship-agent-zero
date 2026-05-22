@@ -89,17 +89,18 @@ def restart_agent_zero_if_needed(restart_needed: bool) -> dict[str, Any]:
         capture_output=True,
         text=True,
     )
-    if status.returncode != 0:
-        return {
-            "needed": True,
-            "restarted": False,
-            "restart_required": True,
-            "reason": "supervisor_status_failed",
-            "stderr": status.stderr.strip(),
-        }
-
     program = _agent_zero_supervisor_program(status.stdout)
     if not program:
+        if status.returncode != 0:
+            return {
+                "needed": True,
+                "restarted": False,
+                "restart_required": True,
+                "reason": "supervisor_status_failed",
+                "returncode": status.returncode,
+                "stderr": status.stderr.strip(),
+                "status": status.stdout.strip(),
+            }
         return {
             "needed": True,
             "restarted": False,
