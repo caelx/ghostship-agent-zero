@@ -1,4 +1,5 @@
 import json
+import importlib
 import sys
 import tomllib
 import types
@@ -283,6 +284,27 @@ def test_plugin_and_package_versions_match():
     plugin_version = _yaml_value(root / "plugin.yaml", "version")
     pyproject = tomllib.loads((root / "pyproject.toml").read_text(encoding="utf-8"))
     assert pyproject["project"]["version"] == plugin_version
+
+
+def test_plugin_root_does_not_shadow_agent_zero_tools(monkeypatch, tmp_path):
+    agent_zero = tmp_path / "agent-zero"
+    tools_dir = agent_zero / "tools"
+    tools_dir.mkdir(parents=True)
+    (tools_dir / "__init__.py").write_text("", encoding="utf-8")
+    (tools_dir / "skills_tool.py").write_text(
+        "DATA_NAME_LOADED_SKILLS = 'loaded_skills'\n",
+        encoding="utf-8",
+    )
+    plugin_root = Path(__file__).resolve().parents[2]
+    monkeypatch.syspath_prepend(str(agent_zero))
+    sys.path.append(str(plugin_root))
+    sys.modules.pop("tools", None)
+    sys.modules.pop("tools.skills_tool", None)
+
+    skills_tool = importlib.import_module("tools.skills_tool")
+
+    assert skills_tool.DATA_NAME_LOADED_SKILLS == "loaded_skills"
+    assert Path(skills_tool.__file__).resolve() == tools_dir / "skills_tool.py"
 
 
 def _yaml_value(path: Path, key: str) -> str:

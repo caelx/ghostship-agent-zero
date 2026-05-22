@@ -2,6 +2,17 @@
 
 ## Unreleased
 
+- Bump plugin version to `1.3.1`.
+- Bump the Agent Zero `_browser` runtime source bootstrap to V12 so existing
+  installs replace the old plugin-root `sys.path` injection with a deterministic
+  file-based CloakBrowser import.
+- Detect live stock Playwright Chrome Browser sessions, stop them during
+  setup/repair, and restart Agent Zero through the actual `run_ui` supervisor
+  program when takeover is incomplete.
+- Remove the plugin-owned top-level `tools` package and keep plugin import
+  paths behind Agent Zero paths so upstream `tools.skills_tool` imports keep
+  working.
+- Add live Browser takeover diagnostics to status JSON.
 - Route current Agent Zero `/tmp/playwright/chromium-*` Browser launches
   through CloakBrowser.
 - Bump the Agent Zero `_browser` runtime source bootstrap to V10 and repair
