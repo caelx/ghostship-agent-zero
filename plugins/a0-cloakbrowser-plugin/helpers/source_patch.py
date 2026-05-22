@@ -55,18 +55,20 @@ def _cloakbrowser_source_runtime():
                 return None
         _cloakbrowser_dir = _cloakbrowser_plugins.find_plugin_dir("cloakbrowser")
         if not _cloakbrowser_dir:
-            return None
+            raise RuntimeError(
+                "CloakBrowser is enabled, but the plugin directory was not found. "
+                "Run: python execute.py repair --noninteractive"
+            )
         if _cloakbrowser_dir not in _cloakbrowser_sys.path:
             _cloakbrowser_sys.path.insert(0, _cloakbrowser_dir)
         from plugin_imports import plugin_import as _cloakbrowser_plugin_import
 
         return _cloakbrowser_plugin_import("helpers.source_runtime")
     except Exception as exc:
-        try:
-            PrintStyle.warning(f"CloakBrowser source bootstrap unavailable: {{exc}}")
-        except Exception:
-            pass
-        return None
+        raise RuntimeError(
+            "CloakBrowser is enabled, but the launch hook is unavailable. "
+            "Run: python execute.py repair --noninteractive"
+        ) from exc
 # {PATCH_MARKER}: end
 """
 
@@ -425,12 +427,16 @@ def patch_runtime_source(manifest: dict[str, Any]) -> dict[str, Any]:
     original_text = target.read_text(encoding="utf-8")
     if PATCH_MARKER in original_text:
         previous = manifest.get("runtime_source_patch") or {}
+        original_hash = previous.get("original_hash", "")
+        backup_path = previous.get("backup_path", "")
+        if backup_path and not original_hash and Path(str(backup_path)).is_file():
+            original_hash = sha256_file(Path(str(backup_path)))
         result = {
             "applied": True,
             "already_patched": True,
             "target_path": str(target),
-            "backup_path": previous.get("backup_path", ""),
-            "original_hash": previous.get("original_hash", ""),
+            "backup_path": backup_path,
+            "original_hash": original_hash,
             "patched_hash": sha256_file(target),
             "patch_version": PATCH_VERSION,
             "timestamp": _utc_now(),

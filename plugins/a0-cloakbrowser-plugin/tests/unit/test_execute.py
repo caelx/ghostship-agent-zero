@@ -16,6 +16,14 @@ def _status():
         "display": {"current": ":99", "configured": ":99", "usable_current": True, "usable_configured": True},
         "browser": {"upstream_available": True},
         "extensions": {"active_paths": ["/ext/ubol"], "items": []},
+        "runtime_patch_validation": {"ok": True, "failed": []},
+        "extension_reconciliation": {"ok": True, "failed": []},
+        "last_launch": {"patched": True, "binary": "/opt/cloakbrowser/chrome"},
+        "invariants": {
+            "source_patch_current": True,
+            "extension_config_reconciled": True,
+            "last_launch_used_cloakbrowser": True,
+        },
     }
 
 

@@ -18,7 +18,7 @@ def test_successful_setup_reconciles_browser_lifecycle(monkeypatch, tmp_path):
     monkeypatch.setattr(setup, "load_manifest", lambda: {})
     monkeypatch.setattr(setup, "save_manifest", lambda manifest: manifest)
     monkeypatch.setattr(setup, "install_system_dependencies", lambda noninteractive: {"ok": True})
-    monkeypatch.setattr(setup, "install_python_dependencies", lambda: {"ok": True})
+    monkeypatch.setattr(setup, "install_python_dependencies", lambda **kwargs: {"ok": True})
     monkeypatch.setattr(setup, "ensure_masquerade", lambda binary: tmp_path / "chrome")
     monkeypatch.setattr(
         setup, "ensure_display", lambda cfg, manifest: {"ok": True, "display": ":99"}
@@ -30,6 +30,9 @@ def test_successful_setup_reconciles_browser_lifecycle(monkeypatch, tmp_path):
         "patch_runtime_source",
         lambda manifest: {"applied": True, "already_patched": False},
     )
+    monkeypatch.setattr(setup, "verify_extension_reconciliation", lambda cfg: {"ok": True})
+    monkeypatch.setattr(setup, "validate_runtime_patch", lambda manifest: {"ok": True})
+    monkeypatch.setattr(setup, "verify_browser_launch", lambda: {"ok": True})
     lifecycle_calls = []
     monkeypatch.setattr(
         setup,
@@ -71,7 +74,7 @@ def test_setup_failure_rolls_back_plugin_owned_state(monkeypatch, tmp_path):
         setup, "save_manifest", lambda manifest: saved.append(dict(manifest)) or manifest
     )
     monkeypatch.setattr(setup, "install_system_dependencies", lambda noninteractive: {"ok": True})
-    monkeypatch.setattr(setup, "install_python_dependencies", lambda: {"ok": True})
+    monkeypatch.setattr(setup, "install_python_dependencies", lambda **kwargs: {"ok": True})
     monkeypatch.setattr(setup, "ensure_masquerade", lambda binary: tmp_path / "chrome")
     monkeypatch.setattr(
         setup, "ensure_display", lambda cfg, manifest: {"ok": True, "display": ":99"}
@@ -111,7 +114,7 @@ def test_python_dependency_failure_preserves_existing_runtime_state(monkeypatch)
         setup, "save_manifest", lambda manifest: saved.append(dict(manifest)) or manifest
     )
     monkeypatch.setattr(setup, "install_system_dependencies", lambda noninteractive: {"ok": True})
-    monkeypatch.setattr(setup, "install_python_dependencies", lambda: {"ok": False})
+    monkeypatch.setattr(setup, "install_python_dependencies", lambda **kwargs: {"ok": False})
     monkeypatch.setattr(
         setup, "_rollback_failed_setup", lambda manifest: rollback_calls.append(manifest)
     )
@@ -120,7 +123,8 @@ def test_python_dependency_failure_preserves_existing_runtime_state(monkeypatch)
 
     assert result["ok"] is False
     assert rollback_calls == []
-    assert saved[-1]["setup_status"] == "failed"
+    assert saved[-1]["setup_status"] == "setup"
+    assert saved[-1]["last_repair_status"] == "failed"
 
 
 def test_late_setup_failure_preserves_previous_successful_state(monkeypatch, tmp_path):
@@ -148,7 +152,7 @@ def test_late_setup_failure_preserves_previous_successful_state(monkeypatch, tmp
         setup, "save_manifest", lambda manifest: saved.append(dict(manifest)) or manifest
     )
     monkeypatch.setattr(setup, "install_system_dependencies", lambda noninteractive: {"ok": True})
-    monkeypatch.setattr(setup, "install_python_dependencies", lambda: {"ok": True})
+    monkeypatch.setattr(setup, "install_python_dependencies", lambda **kwargs: {"ok": True})
     monkeypatch.setattr(setup, "ensure_masquerade", lambda binary: tmp_path / "chrome")
     monkeypatch.setattr(
         setup, "ensure_display", lambda cfg, manifest: {"ok": True, "display": ":99"}
@@ -183,4 +187,5 @@ def test_late_setup_failure_preserves_previous_successful_state(monkeypatch, tmp
     assert result["rollback"]["preserved_prior_setup"] is True
     assert rollback_calls == {"disable": 0, "masquerade": 0, "supervisor": 0, "xvfb": 0}
     assert incomplete.exists()
-    assert saved[-1]["setup_status"] == "failed"
+    assert saved[-1]["setup_status"] == "setup"
+    assert saved[-1]["last_repair_status"] == "failed"
