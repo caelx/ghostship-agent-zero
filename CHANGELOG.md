@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+- Fixed CloakBrowser manual setup so live stock Playwright Browser sessions
+  force cleanup and a `run_ui` supervisor restart, even when the runtime source
+  patch was already present.
+- Updated CloakBrowser to a V12 `_browser` runtime source bootstrap, removed
+  plugin-root `tools` shadowing that could break Agent Zero's
+  `tools.skills_tool` import, and made the bootstrap load CloakBrowser's own
+  `plugin_imports.py` deterministically.
 - Resynced vendored plugin subtrees with their current standalone repository
   `main` branches and restored clean subtree pull behavior.
 - Made the Nix installer download retryable and forced HTTP/1.1 to avoid

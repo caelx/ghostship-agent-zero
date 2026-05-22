@@ -36,6 +36,34 @@ def test_stop_managed_browser_processes_targets_agent_zero_browser_paths(monkeyp
     assert (102, lifecycle.signal.SIGTERM) not in signals
 
 
+def test_stock_agent_zero_playwright_browser_is_flagged(monkeypatch, tmp_path):
+    proc_root = tmp_path / "proc"
+    _proc(
+        proc_root,
+        101,
+        [
+            "/a0/tmp/playwright/chromium-1169/chrome-linux/chrome",
+            "--load-extension=/a0/usr/plugins/cloakbrowser/.cloakbrowser/extensions/ublock-origin-lite",
+            "--user-data-dir=/a0/tmp/browser/sessions/demo",
+        ],
+    )
+    _proc(
+        proc_root,
+        102,
+        [
+            "/srv/changedetection/playwright/chromium-1169/chrome-linux/chrome",
+            "--user-data-dir=/tmp/browser/sessions/demo",
+        ],
+    )
+    monkeypatch.setattr(lifecycle.os, "getpid", lambda: 999)
+
+    matches = lifecycle._managed_browser_processes({}, proc_root=proc_root)
+
+    assert {item["pid"] for item in matches} == {101}
+    stock = [item for item in matches if item["stock_playwright_browser"]]
+    assert [item["pid"] for item in stock] == [101]
+
+
 def test_restart_agent_zero_is_skipped_when_runtime_patch_did_not_change(monkeypatch):
     calls = []
     monkeypatch.setattr(lifecycle.subprocess, "run", lambda *args, **kwargs: calls.append(args))
@@ -66,6 +94,67 @@ def test_restart_agent_zero_uses_discovered_supervisor_program(monkeypatch):
     ]
     assert result["restarted"] is True
     assert result["restart_required"] is False
+
+
+def test_restart_agent_zero_discovers_run_ui_by_pid_cmdline(monkeypatch, tmp_path):
+    proc_root = tmp_path / "proc"
+    _proc(proc_root, 27, ["/opt/venv-a0/bin/python", "/a0/run_ui.py", "--port=80"])
+    commands = []
+    monkeypatch.setattr(lifecycle.shutil, "which", lambda name: "/usr/bin/supervisorctl")
+
+    def fake_run(command, **kwargs):
+        commands.append(command)
+        if command == ["/usr/bin/supervisorctl", "status"]:
+            return SimpleNamespace(
+                returncode=0,
+                stdout="run_cron RUNNING pid 23\nrun_ui RUNNING pid 27\n",
+                stderr="",
+            )
+        return SimpleNamespace(returncode=0, stdout="run_ui: restarted\n", stderr="")
+
+    monkeypatch.setattr(lifecycle.subprocess, "run", fake_run)
+    original_program_lookup = lifecycle._agent_zero_supervisor_program
+    monkeypatch.setattr(
+        lifecycle,
+        "_agent_zero_supervisor_program",
+        lambda output: original_program_lookup(output, proc_root=proc_root),
+    )
+
+    result = lifecycle.restart_agent_zero_if_needed(True)
+
+    assert commands == [
+        ["/usr/bin/supervisorctl", "status"],
+        ["/usr/bin/supervisorctl", "restart", "run_ui"],
+    ]
+    assert result["program"] == "run_ui"
+    assert result["restarted"] is True
+
+
+def test_restart_agent_zero_discovers_run_ui_child_process(monkeypatch, tmp_path):
+    proc_root = tmp_path / "proc"
+    _proc(proc_root, 27, ["python", "/exe/self_update_manager.py", "docker-run-ui"])
+    _proc(proc_root, 209, ["/opt/venv-a0/bin/python", "/a0/run_ui.py", "--port=80"], ppid=27)
+    commands = []
+    monkeypatch.setattr(lifecycle.shutil, "which", lambda name: "/usr/bin/supervisorctl")
+
+    def fake_run(command, **kwargs):
+        commands.append(command)
+        if command == ["/usr/bin/supervisorctl", "status"]:
+            return SimpleNamespace(returncode=0, stdout="run_ui RUNNING pid 27\n", stderr="")
+        return SimpleNamespace(returncode=0, stdout="run_ui: restarted\n", stderr="")
+
+    monkeypatch.setattr(lifecycle.subprocess, "run", fake_run)
+    original_program_lookup = lifecycle._agent_zero_supervisor_program
+    monkeypatch.setattr(
+        lifecycle,
+        "_agent_zero_supervisor_program",
+        lambda output: original_program_lookup(output, proc_root=proc_root),
+    )
+
+    result = lifecycle.restart_agent_zero_if_needed(True)
+
+    assert commands[-1] == ["/usr/bin/supervisorctl", "restart", "run_ui"]
+    assert result["program"] == "run_ui"
 
 
 def test_restart_agent_zero_parses_status_stdout_when_supervisor_returns_nonzero(monkeypatch):
@@ -153,14 +242,30 @@ def test_restart_agent_zero_does_not_select_unrelated_web_sidecar(monkeypatch):
     assert result["reason"] == "agent_zero_program_not_found"
 
 
-def test_reconcile_restarts_only_when_source_patch_changed(monkeypatch):
+def test_reconcile_restarts_when_source_patch_changed_or_stock_browser_detected(monkeypatch):
     restarts = []
     stop_calls = []
+    matched_calls = [
+        [
+            {
+                "pid": 101,
+                "reason": "/a0/tmp/browser/sessions",
+                "cmdline": ["/a0/tmp/playwright/chromium-1169/chrome", "--user-data-dir=/a0/tmp/browser/sessions/a"],
+                "stock_playwright_browser": True,
+            }
+        ],
+        [],
+    ]
     monkeypatch.setattr(
         lifecycle,
         "stop_managed_browser_processes",
-        lambda config: stop_calls.append(config)
+        lambda config, **kwargs: stop_calls.append((config, kwargs.get("matches")))
         or {"matched": [], "terminated": [], "killed": [], "failed": []},
+    )
+    monkeypatch.setattr(
+        lifecycle,
+        "_managed_browser_processes",
+        lambda config: matched_calls.pop(0),
     )
     monkeypatch.setattr(
         lifecycle,
@@ -172,11 +277,48 @@ def test_reconcile_restarts_only_when_source_patch_changed(monkeypatch):
     lifecycle.reconcile_after_setup({}, {"applied": True, "already_patched": True})
     lifecycle.reconcile_after_setup({}, {"applied": True, "already_patched": False})
 
-    assert restarts == [False, True]
-    assert stop_calls == [{}]
+    assert restarts == [True, True]
+    assert stop_calls[0][1][0]["pid"] == 101
+    assert stop_calls[1][1] == []
 
 
-def _proc(proc_root: Path, pid: int, cmdline: list[str]) -> None:
+def test_reconcile_skips_cleanup_when_live_runtime_is_current(monkeypatch):
+    restart_calls = []
+    stop_calls = []
+    monkeypatch.setattr(
+        lifecycle,
+        "_managed_browser_processes",
+        lambda config: [
+            {
+                "pid": 201,
+                "reason": "/opt/cloakbrowser",
+                "cmdline": ["/opt/cloakbrowser/chrome"],
+                "stock_playwright_browser": False,
+            }
+        ],
+    )
+    monkeypatch.setattr(
+        lifecycle,
+        "stop_managed_browser_processes",
+        lambda config, **kwargs: stop_calls.append((config, kwargs)),
+    )
+    monkeypatch.setattr(
+        lifecycle,
+        "restart_agent_zero_if_needed",
+        lambda needed: restart_calls.append(needed)
+        or {"needed": needed, "restarted": False, "restart_required": False},
+    )
+
+    result = lifecycle.reconcile_after_setup({}, {"applied": True, "already_patched": True})
+
+    assert restart_calls == [False]
+    assert stop_calls == []
+    assert result["browser_processes_stopped"]["skipped"] is True
+    assert result["browser_processes_stopped"]["matched"][0]["pid"] == 201
+
+
+def _proc(proc_root: Path, pid: int, cmdline: list[str], *, ppid: int = 1) -> None:
     path = proc_root / str(pid)
     path.mkdir(parents=True)
     (path / "cmdline").write_bytes(b"\0".join(item.encode() for item in cmdline) + b"\0")
+    (path / "status").write_text(f"Name:\ttest\nPPid:\t{ppid}\n", encoding="utf-8")

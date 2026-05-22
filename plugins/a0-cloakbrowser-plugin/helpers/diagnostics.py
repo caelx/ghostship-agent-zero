@@ -9,6 +9,7 @@ from typing import Any
 from .config import get_config, redacted_config
 from .extensions import active_extension_paths, list_extension_status
 from .install_manifest import load_manifest
+from .lifecycle import inspect_live_browser_state
 from .playwright_shim import status as shim_status
 from .runtime_patch import status as runtime_patch_status
 from .validation import collect_invariants, validate_runtime_patch
@@ -75,6 +76,7 @@ def collect_status(config: dict[str, Any] | None = None) -> dict[str, Any]:
         "runtime_patch_validation": runtime_validation,
         "extension_reconciliation": extension_validation,
         "launch_verification": manifest.get("launch_verification", {}),
+        "live_browser_state": inspect_live_browser_state(cfg),
         "extensions": {
             "active_paths": active_extension_paths(cfg),
             "items": list_extension_status(cfg),

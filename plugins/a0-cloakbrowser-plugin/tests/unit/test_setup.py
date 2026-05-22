@@ -32,12 +32,18 @@ def test_successful_setup_reconciles_browser_lifecycle(monkeypatch, tmp_path):
     )
     monkeypatch.setattr(setup, "verify_extension_reconciliation", lambda cfg: {"ok": True})
     monkeypatch.setattr(setup, "validate_runtime_patch", lambda manifest: {"ok": True})
-    monkeypatch.setattr(setup, "verify_browser_launch", lambda: {"ok": True})
+    order = []
+    monkeypatch.setattr(
+        setup,
+        "verify_browser_launch",
+        lambda: order.append("verify") or {"ok": True},
+    )
     lifecycle_calls = []
     monkeypatch.setattr(
         setup,
         "reconcile_after_setup",
-        lambda cfg, source_patch: lifecycle_calls.append((cfg, source_patch))
+        lambda cfg, source_patch: order.append("lifecycle")
+        or lifecycle_calls.append((cfg, source_patch))
         or {
             "browser_processes_stopped": {"matched": []},
             "agent_zero_restart": {"needed": True, "restarted": True},
@@ -48,6 +54,7 @@ def test_successful_setup_reconciles_browser_lifecycle(monkeypatch, tmp_path):
     result = setup.setup_plugin(noninteractive=True)
 
     assert result["ok"] is True
+    assert order == ["lifecycle", "verify"]
     assert result["lifecycle"]["agent_zero_restart"]["restarted"] is True
     assert lifecycle_calls == [
         (
