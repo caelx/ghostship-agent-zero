@@ -13,7 +13,18 @@ def reconcile_after_setup(config: dict[str, Any], source_patch: dict[str, Any]) 
     restart_needed = bool(source_patch.get("applied")) and not bool(
         source_patch.get("already_patched")
     )
-    stopped = stop_managed_browser_processes(config)
+    stopped = (
+        stop_managed_browser_processes(config)
+        if restart_needed
+        else {
+            "matched": [],
+            "terminated": [],
+            "killed": [],
+            "failed": [],
+            "skipped": True,
+            "reason": "runtime_patch_unchanged",
+        }
+    )
     agent_zero_restart = restart_agent_zero_if_needed(restart_needed)
     return {
         "browser_processes_stopped": stopped,

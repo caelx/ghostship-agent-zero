@@ -155,10 +155,12 @@ def test_restart_agent_zero_does_not_select_unrelated_web_sidecar(monkeypatch):
 
 def test_reconcile_restarts_only_when_source_patch_changed(monkeypatch):
     restarts = []
+    stop_calls = []
     monkeypatch.setattr(
         lifecycle,
         "stop_managed_browser_processes",
-        lambda config: {"matched": [], "terminated": [], "killed": [], "failed": []},
+        lambda config: stop_calls.append(config)
+        or {"matched": [], "terminated": [], "killed": [], "failed": []},
     )
     monkeypatch.setattr(
         lifecycle,
@@ -171,6 +173,7 @@ def test_reconcile_restarts_only_when_source_patch_changed(monkeypatch):
     lifecycle.reconcile_after_setup({}, {"applied": True, "already_patched": False})
 
     assert restarts == [False, True]
+    assert stop_calls == [{}]
 
 
 def _proc(proc_root: Path, pid: int, cmdline: list[str]) -> None:
