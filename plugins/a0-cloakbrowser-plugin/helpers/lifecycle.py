@@ -133,10 +133,15 @@ def _managed_browser_processes(
 ) -> list[dict[str, Any]]:
     current_pid = os.getpid()
     matches: list[dict[str, Any]] = []
-    entries = proc_root.iterdir() if proc_root.exists() else ()
+    entries = (
+        sorted(
+            (entry for entry in proc_root.iterdir() if entry.name.isdigit()),
+            key=lambda entry: int(entry.name),
+        )
+        if proc_root.exists()
+        else ()
+    )
     for entry in entries:
-        if not entry.name.isdigit():
-            continue
         pid = int(entry.name)
         if pid == current_pid:
             continue
