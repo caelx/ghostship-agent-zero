@@ -11,16 +11,16 @@ SETUP_SCRIPT = ROOT / "scripts" / "setup-agent-zero-plugin.sh"
 PLUGIN_REPO = "https://github.com/caelx/a0-bitwarden-plugin.git"
 
 
-def test_dockerfile_uses_agent_zero_plugin_installer() -> None:
+def test_dockerfile_does_not_install_bitwarden_by_default() -> None:
     source = DOCKERFILE.read_text(encoding="utf-8")
-    required = (
+    forbidden = (
         f"ARG BITWARDEN_PLUGIN_REPO={PLUGIN_REPO}",
         "BITWARDEN_PLUGIN_REPO=${BITWARDEN_PLUGIN_REPO}",
         "/tmp/ghostship/setup-agent-zero-plugin.sh bitwarden BITWARDEN_PLUGIN_REPO",
     )
-    for snippet in required:
-        if snippet not in source:
-            raise AssertionError(f"Dockerfile missing Bitwarden plugin install snippet: {snippet}")
+    for snippet in forbidden:
+        if snippet in source:
+            raise AssertionError(f"Dockerfile must not install Bitwarden by default: {snippet}")
 
 
 def test_plugin_install_script_uses_agent_zero_plugin_installer() -> None:
@@ -101,7 +101,7 @@ def test_npm_install_path_repairs_broken_distro_npm() -> None:
 
 
 def main() -> int:
-    test_dockerfile_uses_agent_zero_plugin_installer()
+    test_dockerfile_does_not_install_bitwarden_by_default()
     test_plugin_install_script_uses_agent_zero_plugin_installer()
     test_plugin_setup_script_uses_upstream_plugin_dir()
     test_dockerfile_does_not_directly_seed_bitwarden_mcp()

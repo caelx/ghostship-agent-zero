@@ -11,7 +11,6 @@ usage:
 PLUGIN may be one of:
   bitwarden
   cloakbrowser
-  provider_ollama_cloud
   provider_opencode_go
   provider_nvidia_build_free
   provider_opencode_zen_free
@@ -26,9 +25,6 @@ plugin_info() {
       ;;
     cloakbrowser)
       echo "plugins/a0-cloakbrowser-plugin git@github.com:caelx/a0-cloakbrowser-plugin.git"
-      ;;
-    provider_ollama_cloud)
-      echo "plugins/a0-ollama-cloud-provider-plugin git@github.com:caelx/a0-ollama-cloud-provider-plugin.git"
       ;;
     provider_opencode_go)
       echo "plugins/a0-opencode-go-provider-plugin git@github.com:caelx/a0-opencode-go-provider-plugin.git"
@@ -52,7 +48,6 @@ list_plugins() {
   for plugin in \
     bitwarden \
     cloakbrowser \
-    provider_ollama_cloud \
     provider_opencode_go \
     provider_nvidia_build_free \
     provider_opencode_zen_free \

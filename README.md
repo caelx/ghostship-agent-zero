@@ -1,33 +1,29 @@
 # Ghostship Agent Zero
 
-Thin Docker image customization for Agent Zero with Ghostship tooling and Agent Zero plugins.
+Thin Docker image customization for Agent Zero with Ghostship tooling.
 
 ## What This Image Adds
 
 - Uses `agent0ai/agent-zero:latest` as the baseline.
 - Installs the global agent tool baseline: `gh`, `git`, `openssh-client`, `curl`, `wget`, `ca-certificates`, `jq`, `yq`, `rg`, `fd`, `python3`, `pip`, `uv`, `nodejs`, `npm`, `npx`, `corepack`, `nix`, `make`, `just`, `bash`, `tar`, `gzip`, `xz`, `zstd`, `zip`, `unzip`, `7zip`, `file`, `less`, `tree`, `tmux`, `pre-commit`, `gitleaks`, `trufflehog`, `git-secrets`, `git-filter-repo`, `shellcheck`, `shfmt`, and `actionlint`.
-- Installs the standalone Bitwarden Agent Zero plugin from `https://github.com/caelx/a0-bitwarden-plugin.git`, then runs its setup to install `bw`, `mcp-server-bitwarden`, the Bitwarden MCP settings entry, and the credential-vault skill.
-- Installs the public CloakBrowser Agent Zero plugin from `https://github.com/caelx/a0-cloakbrowser-plugin.git`, then runs its setup so the plugin owns CloakBrowser, Xvfb/display support, Playwright masquerade setup, and managed browser extensions.
-- Installs provider plugins for Ollama Cloud, OpenCode Go, NVIDIA Build Free, OpenCode Zen Free, and OpenRouter Free from standalone Agent Zero plugin repositories.
+- Does not install Agent Zero plugins by default. Install Bitwarden, CloakBrowser, and provider plugins manually through Agent Zero or the repo helper scripts when needed.
 - Uses Agent Zero's upstream Browser profile paths under `tmp/browser/sessions`.
 - Uses Docker layer caching so stable tool and browser install layers are reused across CI builds.
-- Leaves Agent Zero's built-in `_browser` plugin installed because CloakBrowser delegates to it.
-- Resolves the latest available package and extension versions during each CI build.
+- Leaves Agent Zero's built-in `_browser` plugin installed because manually installed CloakBrowser delegates to it.
 - Leaves no Ghostship build helper scripts in the final image.
 
 ## Plugin Installation
 
-Build-time Agent Zero plugins are installed through `scripts/setup-agent-zero-plugin.sh`, which delegates Git installation to `scripts/install-agent-zero-plugin.py`. The Python helper runs from `/a0` with `/a0` first on `PYTHONPATH`, calls the same upstream `install_from_git` helper used by the Web UI plugin installer API, and resolves the installed plugin directory through Agent Zero's plugin helper API. Observed API installs place custom plugins under `/a0/usr/plugins/<plugin_name>`; Ghostship does not manually copy plugin directories into place.
+Agent Zero plugins are not installed during the image build. For manual installs, `scripts/setup-agent-zero-plugin.sh` delegates Git installation to `scripts/install-agent-zero-plugin.py`. The Python helper runs from `/a0` with `/a0` first on `PYTHONPATH`, calls the same upstream `install_from_git` helper used by the Web UI plugin installer API, and resolves the installed plugin directory through Agent Zero's plugin helper API. Observed API installs place custom plugins under `/a0/usr/plugins/<plugin_name>`; Ghostship does not manually copy plugin directories into place.
 
 The observed upstream plugin installation contract is documented in `docs/agent-zero-plugin-installation.md`.
 
-The Ghostship plugin repositories are also vendored as full-history Git subtrees under `plugins/a0-*` for local development. Docker builds still default to the configured remote plugin repos, so CI does not build from the subtree folders unless a build is explicitly changed to do so.
+The Ghostship plugin repositories are also vendored as full-history Git subtrees under `plugins/a0-*` for local development. Docker builds do not install those subtrees; use manual plugin installation when you want them in a running Agent Zero instance.
 
-Current plugin build args:
+Known plugin repositories:
 
 - `BITWARDEN_PLUGIN_REPO=https://github.com/caelx/a0-bitwarden-plugin.git`
 - `CLOAKBROWSER_PLUGIN_REPO=https://github.com/caelx/a0-cloakbrowser-plugin.git`
-- `OLLAMA_CLOUD_PROVIDER_PLUGIN_REPO=https://github.com/caelx/a0-ollama-cloud-provider-plugin.git`
 - `OPENCODE_GO_PROVIDER_PLUGIN_REPO=https://github.com/caelx/a0-opencode-go-provider-plugin.git`
 - `NVIDIA_BUILD_FREE_PROVIDER_PLUGIN_REPO=https://github.com/caelx/a0-nvidia-build-free-provider-plugin.git`
 - `OPENCODE_ZEN_FREE_PROVIDER_PLUGIN_REPO=https://github.com/caelx/a0-opencode-zen-free-provider-plugin.git`
@@ -50,7 +46,7 @@ Persist only these paths:
 
 The image does not create a custom runtime directory, override XDG paths, or redirect tool caches.
 
-The Bitwarden, CloakBrowser, and provider plugins are installed into the observed Agent Zero user plugin root, `/a0/usr/plugins`, as resolved by upstream `helpers.plugins.find_plugin_dir()` from the `/a0` runtime context.
+Manually installed Bitwarden, CloakBrowser, and provider plugins are installed into the observed Agent Zero user plugin root, `/a0/usr/plugins`, as resolved by upstream `helpers.plugins.find_plugin_dir()` from the `/a0` runtime context.
 
 ## Build
 
@@ -94,9 +90,8 @@ The Bitwarden plugin can use these optional environment variables:
 
 Do not set `BW_SESSION`; it is an ephemeral internal Bitwarden CLI/MCP runtime value, not durable configuration.
 
-To use the installed provider plugins at runtime, pass the corresponding provider API keys through the Compose environment:
+To use manually installed provider plugins at runtime, pass the corresponding provider API keys through the Compose environment:
 
-- `OLLAMA_CLOUD_API_KEY`
 - `OPENCODE_GO_API_KEY`
 - `NVIDIA_BUILD_FREE_API_KEY`
 - `OPENCODE_ZEN_FREE_API_KEY`

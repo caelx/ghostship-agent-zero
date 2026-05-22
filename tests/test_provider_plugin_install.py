@@ -10,7 +10,6 @@ INSTALL_SCRIPT = ROOT / "scripts" / "install-agent-zero-plugin.py"
 SETUP_SCRIPT = ROOT / "scripts" / "setup-agent-zero-plugin.sh"
 
 PROVIDERS = {
-    "provider_ollama_cloud": "https://github.com/caelx/a0-ollama-cloud-provider-plugin.git",
     "provider_opencode_go": "https://github.com/caelx/a0-opencode-go-provider-plugin.git",
     "provider_nvidia_build_free": "https://github.com/caelx/a0-nvidia-build-free-provider-plugin.git",
     "provider_opencode_zen_free": "https://github.com/caelx/a0-opencode-zen-free-provider-plugin.git",
@@ -18,23 +17,20 @@ PROVIDERS = {
 }
 
 
-def test_dockerfile_installs_provider_plugins_from_git() -> None:
+def test_dockerfile_does_not_install_provider_plugins_by_default() -> None:
     source = DOCKERFILE.read_text(encoding="utf-8")
-    required = (
+    forbidden = (
         "OLLAMA_CLOUD_PROVIDER_PLUGIN_REPO",
+        "provider_ollama_cloud",
         "OPENCODE_GO_PROVIDER_PLUGIN_REPO",
         "NVIDIA_BUILD_FREE_PROVIDER_PLUGIN_REPO",
         "OPENCODE_ZEN_FREE_PROVIDER_PLUGIN_REPO",
         "OPENROUTER_FREE_PROVIDER_PLUGIN_REPO",
-        "/tmp/ghostship/setup-agent-zero-plugin.sh provider_ollama_cloud OLLAMA_CLOUD_PROVIDER_PLUGIN_REPO",
-        "/tmp/ghostship/setup-agent-zero-plugin.sh provider_opencode_go OPENCODE_GO_PROVIDER_PLUGIN_REPO",
-        "/tmp/ghostship/setup-agent-zero-plugin.sh provider_nvidia_build_free NVIDIA_BUILD_FREE_PROVIDER_PLUGIN_REPO",
-        "/tmp/ghostship/setup-agent-zero-plugin.sh provider_opencode_zen_free OPENCODE_ZEN_FREE_PROVIDER_PLUGIN_REPO",
-        "/tmp/ghostship/setup-agent-zero-plugin.sh provider_openrouter_free OPENROUTER_FREE_PROVIDER_PLUGIN_REPO",
+        "/tmp/ghostship/setup-agent-zero-plugin.sh provider_",
     )
-    for snippet in required:
-        if snippet not in source:
-            raise AssertionError(f"Dockerfile missing provider plugin install snippet: {snippet}")
+    for snippet in forbidden:
+        if snippet in source:
+            raise AssertionError(f"Dockerfile must not install provider plugins by default: {snippet}")
 
 
 def test_provider_install_script_uses_agent_zero_plugin_installer() -> None:
@@ -60,15 +56,6 @@ def test_provider_install_script_uses_agent_zero_plugin_installer() -> None:
     for snippet in forbidden:
         if snippet in source:
             raise AssertionError("plugin install script must install the configured repo even when a plugin exists")
-
-
-def test_provider_repos_are_configured_as_build_args() -> None:
-    source = DOCKERFILE.read_text(encoding="utf-8")
-    for plugin_name, repo in PROVIDERS.items():
-        if plugin_name not in source:
-            raise AssertionError(f"Dockerfile missing provider setup: {plugin_name}")
-        if repo not in source:
-            raise AssertionError(f"Dockerfile missing provider repo: {repo}")
 
 
 def test_setup_script_requires_execute_hook() -> None:
@@ -110,13 +97,19 @@ def test_no_bundled_provider_plugin_sources_remain() -> None:
         raise AssertionError(f"bundled provider plugin sources remain: {bundled}")
 
 
+def test_ollama_cloud_provider_subtree_removed() -> None:
+    path = ROOT / "plugins" / "a0-ollama-cloud-provider-plugin"
+    if path.exists():
+        raise AssertionError(f"Ollama Cloud provider subtree should be removed: {path}")
+
+
 def main() -> int:
-    test_dockerfile_installs_provider_plugins_from_git()
+    test_dockerfile_does_not_install_provider_plugins_by_default()
     test_provider_install_script_uses_agent_zero_plugin_installer()
-    test_provider_repos_are_configured_as_build_args()
     test_setup_script_requires_execute_hook()
     test_provider_execute_accepts_default_setup_args()
     test_no_bundled_provider_plugin_sources_remain()
+    test_ollama_cloud_provider_subtree_removed()
     print("provider plugin install tests passed")
     return 0
 

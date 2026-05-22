@@ -1,6 +1,7 @@
 import shutil
+from pathlib import Path
 
-from helpers import source_patch
+from helpers import source_patch, validation
 
 
 def test_patch_runtime_source_applies_v10_without_legacy_plugin_root(monkeypatch, tmp_path):
@@ -28,6 +29,25 @@ def test_patch_runtime_source_applies_v10_without_legacy_plugin_root(monkeypatch
     second = source_patch.patch_runtime_source(manifest)
     assert second["already_patched"] is True
     assert second["backup_path"] == result["backup_path"]
+
+
+def test_patch_runtime_source_rebuilds_metadata_for_existing_patch(monkeypatch, tmp_path):
+    runtime = tmp_path / "runtime.py"
+    original = _current_runtime_source()
+    runtime.write_text(original, encoding="utf-8")
+    monkeypatch.setattr(source_patch, "browser_runtime_source_path", lambda: runtime)
+    source_patch.patch_runtime_source({})
+
+    manifest = {}
+    result = source_patch.patch_runtime_source(manifest)
+
+    backup = result["backup_path"]
+    assert result["already_patched"] is True
+    assert backup
+    assert source_patch.sha256_file(runtime) == result["patched_hash"]
+    backup_hash = source_patch.sha256_file(tmp_path / ".cloakbrowser-backups" / Path(backup).name)
+    assert backup_hash == result["original_hash"]
+    assert validation.validate_runtime_patch(manifest)["ok"] is True
 
 
 def test_patch_runtime_source_upgrades_old_marker_and_helper(monkeypatch, tmp_path):
