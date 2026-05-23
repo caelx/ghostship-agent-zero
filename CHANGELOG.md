@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Added privileged Docker-in-Docker support with in-container `dockerd`,
+  Docker Buildx and Compose tooling, persistent `/var/lib/docker` storage, and
+  no host Docker socket mount.
 - Fixed CloakBrowser manual setup so live stock Playwright Browser sessions
   force cleanup and a `run_ui` supervisor restart, even when the runtime source
   patch was already present.

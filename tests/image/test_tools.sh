@@ -37,6 +37,11 @@ check npm npm --version
 check npx npx --version
 check corepack corepack --version
 check nix nix --extra-experimental-features "nix-command flakes" flake --help
+check docker docker --version
+check docker-buildx docker buildx version
+check docker-compose docker compose version
+check dockerd dockerd --version
+check containerd containerd --version
 check make make --version
 check just just --version
 

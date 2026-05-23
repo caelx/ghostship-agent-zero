@@ -5,10 +5,11 @@ Thin Docker image customization for Agent Zero with Ghostship tooling.
 ## What This Image Adds
 
 - Uses `agent0ai/agent-zero:latest` as the baseline.
-- Installs the global agent tool baseline: `gh`, `git`, `openssh-client`, `curl`, `wget`, `ca-certificates`, `jq`, `yq`, `rg`, `fd`, `python3`, `pip`, `uv`, `nodejs`, `npm`, `npx`, `corepack`, `nix`, `make`, `just`, `bash`, `tar`, `gzip`, `xz`, `zstd`, `zip`, `unzip`, `7zip`, `file`, `less`, `tree`, `tmux`, `pre-commit`, `gitleaks`, `trufflehog`, `git-secrets`, `git-filter-repo`, `shellcheck`, `shfmt`, and `actionlint`.
+- Installs the global agent tool baseline: `gh`, `git`, `openssh-client`, `curl`, `wget`, `ca-certificates`, `jq`, `yq`, `rg`, `fd`, `python3`, `pip`, `uv`, `nodejs`, `npm`, `npx`, `corepack`, `nix`, `docker`, `docker buildx`, `docker compose`, `dockerd`, `containerd`, `make`, `just`, `bash`, `tar`, `gzip`, `xz`, `zstd`, `zip`, `unzip`, `7zip`, `file`, `less`, `tree`, `tmux`, `pre-commit`, `gitleaks`, `trufflehog`, `git-secrets`, `git-filter-repo`, `shellcheck`, `shfmt`, and `actionlint`.
 - Does not install Agent Zero plugins by default. Install Bitwarden, CloakBrowser, and provider plugins manually through Agent Zero or the repo helper scripts when needed.
 - Uses Agent Zero's upstream Browser profile paths under `tmp/browser/sessions`.
 - Uses Docker layer caching so stable tool and browser install layers are reused across CI builds.
+- Starts an isolated in-container Docker daemon for Docker-in-Docker workloads. The image does not mount or use the host Docker or Podman socket.
 - Leaves Agent Zero's built-in `_browser` plugin installed because manually installed CloakBrowser delegates to it.
 - Leaves no Ghostship build helper scripts in the final image.
 
@@ -43,6 +44,7 @@ Persist only these paths:
 
 - `/a0/usr` for Agent Zero user state, projects, chats, and settings.
 - `/root` for CLI auth, SSH keys, git/gh config, caches, shell state, and local package-manager state.
+- `/var/lib/docker` for Docker-in-Docker images, layers, volumes, and nested containers.
 
 The image does not create a custom runtime directory, override XDG paths, or redirect tool caches.
 
@@ -78,9 +80,45 @@ Headed CloakBrowser deployments should provide at least `2 GB` of `/dev/shm`.
 The included Compose file sets `shm_size: 2g`; for direct Docker or Podman runs,
 pass `--shm-size=2g`.
 
+## Docker-In-Docker
+
+The image starts its own Docker daemon before Agent Zero starts. Inside the
+container, Docker commands use only the in-container socket:
+
+```bash
+docker info
+docker build -t example:local .
+docker run --rm example:local
+```
+
+Do not mount `/var/run/docker.sock` from the host. The Compose file uses
+`privileged: true` and a dedicated `a0_docker` volume for `/var/lib/docker`, so
+nested Docker images and containers persist across Agent Zero restarts without
+access to the host Docker or Podman daemon.
+
+On a Podman host, run the Compose file with the host's Compose-compatible
+Podman workflow. For a direct Podman run, keep the same isolation model:
+
+```bash
+podman run --replace --name ghostship-agent-zero --privileged --shm-size=2g \
+  -p 50080:80 \
+  -v a0_usr:/a0/usr \
+  -v a0_root:/root \
+  -v a0_docker:/var/lib/docker \
+  ghostship-agent-zero:local
+```
+
+The default inner Docker storage driver is `overlay2`. If a specific host
+kernel/storage combination rejects nested overlay storage, set
+`DOCKERD_STORAGE_DRIVER=vfs` for compatibility at the cost of slower builds.
+
 ## Environment
 
 `GH_PROMPT_DISABLED=1` is baked into the image so GitHub CLI commands avoid interactive prompts.
+
+`DOCKER_HOST=unix:///var/run/docker.sock`, `DOCKERD_STORAGE_DRIVER=overlay2`,
+and `DOCKERD_DATA_ROOT=/var/lib/docker` are baked into the image for the
+in-container Docker daemon.
 
 The Bitwarden plugin can use these optional environment variables:
 

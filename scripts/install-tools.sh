@@ -4,7 +4,7 @@ set -euo pipefail
 export DEBIAN_FRONTEND=noninteractive
 
 usage() {
-  echo "usage: install-tools.sh {apt|npm|uv|github|nix|all}" >&2
+  echo "usage: install-tools.sh {apt|npm|uv|github|nix|docker|all}" >&2
 }
 
 install_apt_tools() {
@@ -157,6 +157,43 @@ filter-syscalls = false
 EOF
 }
 
+install_docker() {
+  apt-get update
+  apt-get install -y --no-install-recommends ca-certificates curl gnupg
+
+  . /etc/os-release
+  repo_id="${ID:-debian}"
+  case "$repo_id" in
+    debian|ubuntu)
+      ;;
+    *)
+      echo "unsupported Docker apt repository OS: $repo_id" >&2
+      exit 1
+      ;;
+  esac
+
+  install -d -m 0755 /etc/apt/keyrings
+  if [ ! -f /etc/apt/keyrings/docker.asc ]; then
+    curl -fsSL "https://download.docker.com/linux/${repo_id}/gpg" \
+      -o /etc/apt/keyrings/docker.asc
+    chmod 0644 /etc/apt/keyrings/docker.asc
+  fi
+
+  arch="$(dpkg --print-architecture)"
+  codename="${VERSION_CODENAME:-bookworm}"
+  cat >/etc/apt/sources.list.d/docker.list <<EOF
+deb [arch=${arch} signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/${repo_id} ${codename} stable
+EOF
+
+  apt-get update
+  apt-get install -y --no-install-recommends \
+    containerd.io \
+    docker-buildx-plugin \
+    docker-ce \
+    docker-ce-cli \
+    docker-compose-plugin
+}
+
 case "${1:-all}" in
   apt)
     install_apt_tools
@@ -173,12 +210,16 @@ case "${1:-all}" in
   nix)
     install_nix
     ;;
+  docker)
+    install_docker
+    ;;
   all)
     install_apt_tools
     install_npm_tools
     install_uv
     install_github_tools
     install_nix
+    install_docker
     ;;
   *)
     usage

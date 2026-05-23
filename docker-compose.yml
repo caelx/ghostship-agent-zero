@@ -14,9 +14,11 @@ services:
       NVIDIA_BUILD_FREE_API_KEY: ${NVIDIA_BUILD_FREE_API_KEY:-}
       OPENCODE_ZEN_FREE_API_KEY: ${OPENCODE_ZEN_FREE_API_KEY:-}
       OPENROUTER_FREE_API_KEY: ${OPENROUTER_FREE_API_KEY:-}
+    privileged: true
     volumes:
       - a0_usr:/a0/usr
       - a0_root:/root
+      - a0_docker:/var/lib/docker
     ports:
       - "50080:80"
     shm_size: 2g
@@ -24,3 +26,4 @@ services:
 volumes:
   a0_usr:
   a0_root:
+  a0_docker:
