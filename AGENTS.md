@@ -7,7 +7,18 @@
 ## Project Notes
 
 - This repo is a thin Docker overlay on `agent0ai/agent-zero:latest`, not a full fork.
-- Ghostship plugin sources are full-history subtrees under `plugins/a0-*`; keep Docker defaults pointed at remote plugin repos unless explicitly testing local sources.
+- Ghostship plugin sources are canonical in the standalone upstream repos; Agent Zero installs from those repos.
+- Treat the `plugins/a0-*` directories as convenience subtree snapshots for overlay testing, not as the published source of truth.
+- Plugin repo locations:
+  - Bitwarden: `/home/nixos/dev/a0-bitwarden-plugin` -> `https://github.com/caelx/a0-bitwarden-plugin.git`
+  - CloakBrowser: `/home/nixos/dev/a0-cloakbrowser-plugin` -> `https://github.com/caelx/a0-cloakbrowser-plugin.git`
+  - OpenCode Go provider: `/home/nixos/dev/a0-opencode-go-provider-plugin` -> `https://github.com/caelx/a0-opencode-go-provider-plugin.git`
+  - NVIDIA Build Free provider: `/home/nixos/dev/a0-nvidia-build-free-provider-plugin` -> `https://github.com/caelx/a0-nvidia-build-free-provider-plugin.git`
+  - OpenCode Zen Free provider: `/home/nixos/dev/a0-opencode-zen-free-provider-plugin` -> `https://github.com/caelx/a0-opencode-zen-free-provider-plugin.git`
+  - OpenRouter Free provider: `/home/nixos/dev/a0-openrouter-free-provider-plugin` -> `https://github.com/caelx/a0-openrouter-free-provider-plugin.git`
+- The old Ollama Cloud provider repo is retired because Ollama Cloud is integrated upstream in Agent Zero; do not sync or reinstall it.
+- When plugin code changes in this overlay, sync the intended files to the matching standalone plugin repo and push that repo's `main` before treating the change as published or testable through Agent Zero installs.
+- Keep Docker defaults pointed at remote plugin repos unless explicitly testing local sources.
 - Build-time Agent Zero plugins use `scripts/setup-agent-zero-plugin.sh`; pass plugin name plus repo env var so the shared helper installs the configured Git source from `/a0` with `/a0` first on `PYTHONPATH`, resolves the upstream plugin dir with Agent Zero helpers, then runs plugin setup there.
 - Provider plugin `execute.py` files must accept `setup` because the shared Docker build helper invokes that command after install.
 - Real upstream API execution in `agent0ai/agent-zero:latest` showed custom plugins land at `/a0/usr/plugins/<name>` when the UI runs from `/a0`; tests should fail if helper imports resolve `/git/agent-zero/usr/plugins`.
@@ -27,4 +38,5 @@
 - Work in feature branches with pull requests; do not merge until PR CI passes.
 - Keep changes surgical so upstream Agent Zero updates stay easy to adopt.
 - When upstream plugin branches lag overlay subtree fixes, sync only intended
-  changed files instead of overwriting the whole subtree snapshot.
+  changed files instead of overwriting the whole subtree snapshot, then push the
+  intended subtree back to its upstream plugin repo.
