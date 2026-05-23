@@ -26,8 +26,13 @@ def test_docker_install_path_uses_official_repo() -> None:
     source = INSTALL_TOOLS.read_text(encoding="utf-8")
     required = (
         "install_docker()",
-        'repo_id="${ID:-debian}"',
-        'https://download.docker.com/linux/${repo_id}/gpg',
+        'docker_repo_id="${DOCKER_APT_REPO_ID:-${ID:-debian}}"',
+        'docker_codename="${DOCKER_APT_CODENAME:-${VERSION_CODENAME:-bookworm}}"',
+        "kali)",
+        'docker_repo_id="debian"',
+        'docker_codename="${DOCKER_APT_CODENAME:-bookworm}"',
+        'https://download.docker.com/linux/${docker_repo_id}/gpg',
+        "https://download.docker.com/linux/${docker_repo_id} ${docker_codename} stable",
         "/etc/apt/keyrings/docker.asc",
         "/etc/apt/sources.list.d/docker.list",
         "containerd.io",

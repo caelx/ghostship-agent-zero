@@ -162,27 +162,31 @@ install_docker() {
   apt-get install -y --no-install-recommends ca-certificates curl gnupg
 
   . /etc/os-release
-  repo_id="${ID:-debian}"
-  case "$repo_id" in
+  docker_repo_id="${DOCKER_APT_REPO_ID:-${ID:-debian}}"
+  docker_codename="${DOCKER_APT_CODENAME:-${VERSION_CODENAME:-bookworm}}"
+  case "$docker_repo_id" in
     debian|ubuntu)
       ;;
+    kali)
+      docker_repo_id="debian"
+      docker_codename="${DOCKER_APT_CODENAME:-bookworm}"
+      ;;
     *)
-      echo "unsupported Docker apt repository OS: $repo_id" >&2
+      echo "unsupported Docker apt repository OS: $docker_repo_id" >&2
       exit 1
       ;;
   esac
 
   install -d -m 0755 /etc/apt/keyrings
   if [ ! -f /etc/apt/keyrings/docker.asc ]; then
-    curl -fsSL "https://download.docker.com/linux/${repo_id}/gpg" \
+    curl -fsSL "https://download.docker.com/linux/${docker_repo_id}/gpg" \
       -o /etc/apt/keyrings/docker.asc
     chmod 0644 /etc/apt/keyrings/docker.asc
   fi
 
   arch="$(dpkg --print-architecture)"
-  codename="${VERSION_CODENAME:-bookworm}"
   cat >/etc/apt/sources.list.d/docker.list <<EOF
-deb [arch=${arch} signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/${repo_id} ${codename} stable
+deb [arch=${arch} signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/${docker_repo_id} ${docker_codename} stable
 EOF
 
   apt-get update
