@@ -109,16 +109,17 @@ podman run --replace --name ghostship-agent-zero --privileged --shm-size=2g \
 ```
 
 The default inner Docker storage driver is `overlay2`. If a specific host
-kernel/storage combination rejects nested overlay storage, set
-`DOCKERD_STORAGE_DRIVER=vfs` for compatibility at the cost of slower builds.
+kernel/storage combination rejects nested overlay storage, the entrypoint
+retries startup with `vfs` for compatibility. You can also set
+`DOCKERD_STORAGE_DRIVER=vfs` explicitly at the cost of slower builds.
 
 ## Environment
 
 `GH_PROMPT_DISABLED=1` is baked into the image so GitHub CLI commands avoid interactive prompts.
 
 `DOCKER_HOST=unix:///var/run/docker.sock`, `DOCKERD_STORAGE_DRIVER=overlay2`,
-and `DOCKERD_DATA_ROOT=/var/lib/docker` are baked into the image for the
-in-container Docker daemon.
+`DOCKERD_STORAGE_FALLBACK=true`, and `DOCKERD_DATA_ROOT=/var/lib/docker` are
+baked into the image for the in-container Docker daemon.
 
 The Bitwarden plugin can use these optional environment variables:
 

@@ -7,6 +7,8 @@
   no host Docker socket mount.
 - Fixed Docker tooling installation in the current Agent Zero Kali-based image
   by mapping Kali to Docker's Debian apt repository during CI builds.
+- Made the in-container Docker daemon retry with `vfs` storage when nested
+  `overlay2` is rejected by the host kernel/storage environment.
 - Fixed CloakBrowser manual setup so live stock Playwright Browser sessions
   force cleanup and a `run_ui` supervisor restart, even when the runtime source
   patch was already present.

@@ -6,6 +6,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 INSTALL_TOOLS = ROOT / "scripts" / "install-tools.sh"
+ENTRYPOINT_DIND = ROOT / "scripts" / "entrypoint-dind.sh"
 COMPOSE_FILE = ROOT / "docker-compose.yml"
 
 
@@ -62,10 +63,25 @@ def test_compose_enables_self_contained_dind() -> None:
         raise AssertionError("Compose must not mount the host Docker socket")
 
 
+def test_dind_entrypoint_falls_back_from_overlay2_to_vfs() -> None:
+    source = ENTRYPOINT_DIND.read_text(encoding="utf-8")
+    required = (
+        'allow_storage_fallback="${DOCKERD_STORAGE_FALLBACK:-true}"',
+        'if [ "$storage_driver" = "overlay2" ] && [ "$allow_storage_fallback" = "true" ]; then',
+        'grep -Eq "failed to mount overlay|driver not supported: overlay2|invalid argument" "$log_file"',
+        "dockerd overlay2 storage failed; retrying with vfs storage driver",
+        "start_dockerd vfs",
+    )
+    for snippet in required:
+        if snippet not in source:
+            raise AssertionError(f"DinD entrypoint missing storage fallback snippet: {snippet}")
+
+
 def main() -> int:
     test_nix_installer_download_is_retryable()
     test_docker_install_path_uses_official_repo()
     test_compose_enables_self_contained_dind()
+    test_dind_entrypoint_falls_back_from_overlay2_to_vfs()
     print("tool install tests passed")
     return 0
 

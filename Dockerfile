@@ -8,6 +8,7 @@ ENV CLOAKBROWSER_CACHE_DIR=/opt/cloakbrowser \
     GH_PROMPT_DISABLED=1 \
     DOCKER_HOST=unix:///var/run/docker.sock \
     DOCKERD_STORAGE_DRIVER=overlay2 \
+    DOCKERD_STORAGE_FALLBACK=true \
     DOCKERD_DATA_ROOT=/var/lib/docker
 
 ENV PATH=/nix/var/nix/profiles/default/bin:$PATH
