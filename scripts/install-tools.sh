@@ -7,8 +7,21 @@ usage() {
   echo "usage: install-tools.sh {apt|npm|uv|github|nix|docker|all}" >&2
 }
 
-install_apt_tools() {
+refresh_apt_lists() {
+  for source_file in /etc/apt/sources.list /etc/apt/sources.list.d/*; do
+    [ -f "$source_file" ] || continue
+    sed -i \
+      -e 's|http://http.kali.org/kali|http://kali.download/kali|g' \
+      -e 's|https://http.kali.org/kali|http://kali.download/kali|g' \
+      "$source_file"
+  done
+  rm -rf /var/lib/apt/lists/*
+  mkdir -p /var/lib/apt/lists/partial
   apt-get update
+}
+
+install_apt_tools() {
+  refresh_apt_lists
   apt-get install -y --no-install-recommends ca-certificates curl gnupg
 
   install -d -m 0755 /etc/apt/keyrings
@@ -23,7 +36,7 @@ install_apt_tools() {
 deb [arch=${arch} signed-by=/etc/apt/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main
 EOF
 
-  apt-get update
+  refresh_apt_lists
 
   archive_package="p7zip-full"
   if apt-cache show 7zip >/dev/null 2>&1; then
@@ -158,7 +171,7 @@ EOF
 }
 
 install_docker() {
-  apt-get update
+  refresh_apt_lists
   apt-get install -y --no-install-recommends ca-certificates curl gnupg
 
   . /etc/os-release
@@ -189,7 +202,7 @@ install_docker() {
 deb [arch=${arch} signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/${docker_repo_id} ${docker_codename} stable
 EOF
 
-  apt-get update
+  refresh_apt_lists
   apt-get install -y --no-install-recommends \
     containerd.io \
     docker-buildx-plugin \
