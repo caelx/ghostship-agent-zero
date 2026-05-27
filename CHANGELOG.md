@@ -11,6 +11,8 @@
   `overlay2` is rejected by the host kernel/storage environment.
 - Pinned image builds to the stable `kali.download` apt mirror and forced apt
   package lists to refresh so stale Kali redirector URLs do not break CI.
+- Updated CloakBrowser to keep keyboard dedupe viewer-scoped, restore the
+  disabled-plugin Browser opt-out, and recover sidecar source-patch metadata.
 - Fixed CloakBrowser manual setup so live stock Playwright Browser sessions
   force cleanup and a `run_ui` supervisor restart, even when the runtime source
   patch was already present.
