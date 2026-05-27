@@ -2,6 +2,41 @@
 
 ## Unreleased
 
+- Bump plugin version to `1.3.11`.
+- Add a setup-time Agent Zero Browser websocket source patch that drops
+  duplicate keyboard emits arriving within 25 ms for the same browser/key.
+- Bump plugin version to `1.3.10`.
+- Fall back to Git tag discovery when the GitHub tags API rate-limits uBOL
+  metadata checks, and accept `GH_TOKEN` as an auth fallback.
+- Bump plugin version to `1.3.9`.
+- Treat transient `httpbin` 5xx responses as skipped live-detector targets so
+  the Upstream Canary does not fail on third-party probe outages.
+- Bump plugin version to `1.3.8`.
+- Force setup/verify imports to use the same Agent Zero root selected for
+  source patching and drop stale cached `_browser` modules during that import.
+- Bump plugin version to `1.3.7`.
+- Remove duplicate enabled-state filtering from the injected Browser source
+  bootstrap so the plugin runtime helper is the single source of truth for
+  enabled versus disabled launch behavior.
+- Bump plugin version to `1.3.6`.
+- Enable the plugin in integration CI before setup so launch verification runs
+  against the same enabled lifecycle used by Agent Zero.
+- Bump plugin version to `1.3.5`.
+- Allow setup/repair integration runs to continue after a runtime patch when no
+  live Agent Zero `run_ui` process exists to restart.
+- Bump plugin version to `1.3.4`.
+- Prevent the Agent Zero Browser open patch from reusing CloakBrowser extension
+  pages as normal browser tabs after extension startup or recovery.
+- Bump plugin version to `1.3.3`.
+- Launch CloakBrowser through its Patchright backend so Agent Zero Browser does
+  not fall back to unpatched Playwright runtime behavior.
+- Ensure setup/repair installs Patchright when it is missing while preserving
+  Agent Zero's existing Playwright install.
+- Bump plugin version to `1.3.2`.
+- Schedule Agent Zero `run_ui` restarts 10 seconds after Execute returns so the
+  UI receives structured JSON before the server reloads.
+- Add lifecycle JSONL logging for browser cleanup and deferred restart
+  decisions.
 - Bump plugin version to `1.3.1`.
 - Bump the Agent Zero `_browser` runtime source bootstrap to V12 so existing
   installs replace the old plugin-root `sys.path` injection with a deterministic
