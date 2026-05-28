@@ -93,7 +93,6 @@ jobs:
             OPENCODE_ZEN_FREE_PROVIDER_PLUGIN_REV=${{ steps.plugin-revisions.outputs.opencode_zen_free }}
             OPENROUTER_FREE_PROVIDER_PLUGIN_REV=${{ steps.plugin-revisions.outputs.openrouter_free }}
           cache-from: type=gha,scope=agent-zero-amd64
-          cache-to: type=gha,scope=agent-zero-amd64,mode=max
 
       - name: Run image tests
         run: tests/run-image-tests.sh "${TEST_IMAGE}"
@@ -186,7 +185,6 @@ jobs:
             OPENCODE_ZEN_FREE_PROVIDER_PLUGIN_REV=${{ steps.plugin-revisions.outputs.opencode_zen_free }}
             OPENROUTER_FREE_PROVIDER_PLUGIN_REV=${{ steps.plugin-revisions.outputs.openrouter_free }}
           cache-from: type=gha,scope=agent-zero-arm64
-          cache-to: type=gha,scope=agent-zero-arm64,mode=max
 
   publish-manifest:
     runs-on: ubuntu-latest

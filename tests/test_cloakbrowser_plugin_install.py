@@ -73,8 +73,8 @@ def test_plugin_setup_script_uses_upstream_plugin_dir() -> None:
         'git -C "$plugin_dir" checkout --detach FETCH_HEAD',
         'cd "$plugin_dir"',
         "if [ ! -f execute.py ]; then",
-        'echo "required setup hook missing: $plugin_dir/execute.py" >&2',
-        "exit 1",
+        'echo "optional setup hook missing: $plugin_dir/execute.py; skipping plugin setup"',
+        "exit 0",
         'PYTHONPATH=/a0:"$plugin_dir" /opt/venv-a0/bin/python execute.py "$@"',
     )
     for snippet in required:
@@ -104,6 +104,11 @@ def test_dockerfile_no_longer_patches_agent_zero_browser_runtime() -> None:
             raise AssertionError(f"Dockerfile still contains obsolete CloakBrowser patch path: {snippet}")
 
 
+def test_cloakbrowser_plugin_still_ships_execute_hook() -> None:
+    if not (ROOT / "plugins" / "a0-cloakbrowser-plugin" / "execute.py").is_file():
+        raise AssertionError("CloakBrowser needs execute.py for setup, repair, and status")
+
+
 def test_no_ghostship_cloakbrowser_patch_scripts_remain() -> None:
     forbidden_files = (
         "patch-browser-ui.py",
@@ -129,6 +134,7 @@ def main() -> int:
     test_plugin_install_script_uses_agent_zero_plugin_installer()
     test_plugin_setup_script_uses_upstream_plugin_dir()
     test_dockerfile_no_longer_patches_agent_zero_browser_runtime()
+    test_cloakbrowser_plugin_still_ships_execute_hook()
     test_no_ghostship_cloakbrowser_patch_scripts_remain()
     print("CloakBrowser plugin install tests passed")
     return 0

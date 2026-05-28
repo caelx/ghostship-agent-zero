@@ -1,6 +1,6 @@
 [project]
 name = "a0-opencode-zen-free-provider-plugin"
-version = "1.0.2"
+version = "1.0.3"
 description = "Adds free OpenCode Zen chat models."
 requires-python = ">=3.11"
 dependencies = ["httpx>=0.27"]

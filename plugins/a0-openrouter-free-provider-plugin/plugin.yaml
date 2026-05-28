@@ -1,7 +1,7 @@
 name: provider_openrouter_free
 title: OpenRouter Free Provider
 description: Adds free tool-capable OpenRouter chat models.
-version: 1.0.2
+version: 1.0.3
 settings_sections:
   - agent
 per_project_config: false

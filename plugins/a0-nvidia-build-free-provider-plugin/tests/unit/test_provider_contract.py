@@ -24,6 +24,7 @@ def test_root_plugin_metadata_is_installable():
     assert "127.0.0.1:5000" not in model_config
     assert TEMPLATE_ENDPOINT in template_config
     assert MIGRATION_FILE.is_file()
+    assert not (ROOT/"execute.py").exists()
     assert not (ROOT/"extensions"/"python"/"startup_migration"/"_10_render_model_provider.py").exists()
 def test_model_provider_port_resolution(monkeypatch):
     install_extension_stub()
