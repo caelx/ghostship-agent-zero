@@ -13,6 +13,8 @@
   package lists to refresh so stale Kali redirector URLs do not break CI.
 - Updated CloakBrowser to keep keyboard dedupe viewer-scoped, restore the
   disabled-plugin Browser opt-out, and recover sidecar source-patch metadata.
+- Updated CloakBrowser Execute output so a scheduled Agent Zero restart is
+  treated as successful first-run readiness with shorter human output.
 - Fixed CloakBrowser manual setup so live stock Playwright Browser sessions
   force cleanup and a `run_ui` supervisor restart, even when the runtime source
   patch was already present.
