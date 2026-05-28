@@ -16,7 +16,7 @@ git@github.com:caelx/a0-opencode-go-provider-plugin.git
 
 After installation, enable `OpenCode Go` in the Agent Zero plugin UI. The plugin registers the chat provider `opencode_go` through `conf/model_providers.yaml`.
 
-Run `python execute.py status --json` inside the installed plugin directory to verify `installed`, `enabled`, `provider_config_present`, and `provider_registered`.
+The provider is static and does not ship an Agent Zero Execute action; enable or disable it through Agent Zero's plugin UI.
 
 ## Configuration
 

@@ -58,15 +58,15 @@ def test_provider_install_script_uses_agent_zero_plugin_installer() -> None:
             raise AssertionError("plugin install script must install the configured repo even when a plugin exists")
 
 
-def test_setup_script_requires_execute_hook() -> None:
+def test_setup_script_treats_execute_hook_as_optional() -> None:
     source = SETUP_SCRIPT.read_text(encoding="utf-8")
     required = (
         "/ins/copy_A0.sh local",
         'plugin_dir="$(cd /a0 && PYTHONPATH=/a0 /opt/venv-a0/bin/python /tmp/ghostship/install-agent-zero-plugin.py "$plugin_name" "$repo_env")"',
         'cd "$plugin_dir"',
         "if [ ! -f execute.py ]; then",
-        'echo "required setup hook missing: $plugin_dir/execute.py" >&2',
-        "exit 1",
+        'echo "optional setup hook missing: $plugin_dir/execute.py; skipping plugin setup"',
+        "exit 0",
         'PYTHONPATH=/a0:"$plugin_dir" /opt/venv-a0/bin/python execute.py "$@"',
     )
     for snippet in required:
@@ -78,14 +78,16 @@ def test_setup_script_requires_execute_hook() -> None:
             raise AssertionError(f"plugin setup script must not materialize plugins under /a0/usr/plugins: {snippet}")
 
 
-def test_provider_execute_accepts_default_setup_args() -> None:
+def test_provider_plugins_do_not_ship_execute_hooks() -> None:
     for plugin_name in PROVIDERS:
-        execute_source = (ROOT / "plugins" / f"a0-{plugin_name.removeprefix('provider_').replace('_', '-')}-provider-plugin" / "execute.py").read_text(
-            encoding="utf-8"
+        execute_path = (
+            ROOT
+            / "plugins"
+            / f"a0-{plugin_name.removeprefix('provider_').replace('_', '-')}-provider-plugin"
+            / "execute.py"
         )
-        for snippet in ('"setup"', '"--noninteractive"'):
-            if snippet not in execute_source:
-                raise AssertionError(f"{plugin_name} execute.py missing default setup compatibility: {snippet}")
+        if execute_path.exists():
+            raise AssertionError(f"{plugin_name} should not ship execute.py without a required Execute flow")
 
 
 def test_no_bundled_provider_plugin_sources_remain() -> None:
@@ -106,8 +108,8 @@ def test_ollama_cloud_provider_subtree_removed() -> None:
 def main() -> int:
     test_dockerfile_does_not_install_provider_plugins_by_default()
     test_provider_install_script_uses_agent_zero_plugin_installer()
-    test_setup_script_requires_execute_hook()
-    test_provider_execute_accepts_default_setup_args()
+    test_setup_script_treats_execute_hook_as_optional()
+    test_provider_plugins_do_not_ship_execute_hooks()
     test_no_bundled_provider_plugin_sources_remain()
     test_ollama_cloud_provider_subtree_removed()
     print("provider plugin install tests passed")

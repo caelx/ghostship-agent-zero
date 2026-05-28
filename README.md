@@ -15,7 +15,7 @@ Thin Docker image customization for Agent Zero with Ghostship tooling.
 
 ## Plugin Installation
 
-Agent Zero plugins are not installed during the image build. For manual installs, `scripts/setup-agent-zero-plugin.sh` delegates Git installation to `scripts/install-agent-zero-plugin.py`. The Python helper runs from `/a0` with `/a0` first on `PYTHONPATH`, calls the same upstream `install_from_git` helper used by the Web UI plugin installer API, and resolves the installed plugin directory through Agent Zero's plugin helper API. Observed API installs place custom plugins under `/a0/usr/plugins/<plugin_name>`; Ghostship does not manually copy plugin directories into place.
+Agent Zero plugins are not installed during the image build. For manual installs, `scripts/setup-agent-zero-plugin.sh` delegates Git installation to `scripts/install-agent-zero-plugin.py`. The Python helper runs from `/a0` with `/a0` first on `PYTHONPATH`, calls the same upstream `install_from_git` helper used by the Web UI plugin installer API, and resolves the installed plugin directory through Agent Zero's plugin helper API. If the plugin ships `execute.py`, the setup helper runs it; provider-only plugins can omit that file. Observed API installs place custom plugins under `/a0/usr/plugins/<plugin_name>`; Ghostship does not manually copy plugin directories into place.
 
 The observed upstream plugin installation contract is documented in `docs/agent-zero-plugin-installation.md`.
 

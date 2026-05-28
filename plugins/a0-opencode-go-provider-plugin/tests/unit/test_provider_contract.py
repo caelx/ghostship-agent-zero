@@ -15,6 +15,7 @@ def test_root_plugin_metadata_is_installable():
     assert (ROOT/"plugin.yaml").is_file(); assert (ROOT/"conf"/"model_providers.yaml").is_file(); assert (ROOT/"webui"/"config.html").is_file(); assert (ROOT/"webui"/"thumbnail.png").is_file()
     assert f"name: {PLUGIN_NAME}" in (ROOT/"plugin.yaml").read_text(encoding="utf-8")
     assert PROVIDER_ID + ":" in (ROOT/"conf"/"model_providers.yaml").read_text(encoding="utf-8")
+    assert not (ROOT/"execute.py").exists()
 def test_missing_api_key_returns_clear_status(monkeypatch):
     if not HAS_API: return
     install_package_alias(); monkeypatch.delenv(ENV_VAR, raising=False)

@@ -54,8 +54,8 @@ def test_plugin_setup_script_uses_upstream_plugin_dir() -> None:
         'plugin_dir="$(cd /a0 && PYTHONPATH=/a0 /opt/venv-a0/bin/python /tmp/ghostship/install-agent-zero-plugin.py "$plugin_name" "$repo_env")"',
         'cd "$plugin_dir"',
         "if [ ! -f execute.py ]; then",
-        'echo "required setup hook missing: $plugin_dir/execute.py" >&2',
-        "exit 1",
+        'echo "optional setup hook missing: $plugin_dir/execute.py; skipping plugin setup"',
+        "exit 0",
         'PYTHONPATH=/a0:"$plugin_dir" /opt/venv-a0/bin/python execute.py "$@"',
     )
     for snippet in required:
@@ -77,6 +77,11 @@ def test_dockerfile_does_not_directly_seed_bitwarden_mcp() -> None:
     for snippet in forbidden:
         if snippet in source:
             raise AssertionError(f"Dockerfile still contains direct Bitwarden setup: {snippet}")
+
+
+def test_bitwarden_plugin_still_ships_execute_hook() -> None:
+    if not (ROOT / "plugins" / "a0-bitwarden-plugin" / "execute.py").is_file():
+        raise AssertionError("Bitwarden needs execute.py for CLI/MCP setup and repair")
 
 
 def test_apt_cleanup_does_not_autoremove_npm_dependencies() -> None:
@@ -105,6 +110,7 @@ def main() -> int:
     test_plugin_install_script_uses_agent_zero_plugin_installer()
     test_plugin_setup_script_uses_upstream_plugin_dir()
     test_dockerfile_does_not_directly_seed_bitwarden_mcp()
+    test_bitwarden_plugin_still_ships_execute_hook()
     test_apt_cleanup_does_not_autoremove_npm_dependencies()
     test_npm_install_path_repairs_broken_distro_npm()
     print("Bitwarden plugin install tests passed")

@@ -31,7 +31,7 @@ fi
 
 cd "$plugin_dir"
 if [ ! -f execute.py ]; then
-  echo "required setup hook missing: $plugin_dir/execute.py" >&2
-  exit 1
+  echo "optional setup hook missing: $plugin_dir/execute.py; skipping plugin setup"
+  exit 0
 fi
 PYTHONPATH=/a0:"$plugin_dir" /opt/venv-a0/bin/python execute.py "$@"

@@ -18,6 +18,8 @@
 - Updated CloakBrowser setup to install Agent Zero's missing `regex` helper
   dependency and keep status output free of CloakBrowser's import banner.
 - Updated CloakBrowser Execute to suppress import banners written to stderr.
+- Made plugin setup hooks optional and removed provider-plugin Execute entrypoints
+  that only duplicated install/status behavior.
 - Fixed CloakBrowser manual setup so live stock Playwright Browser sessions
   force cleanup and a `run_ui` supervisor restart, even when the runtime source
   patch was already present.
