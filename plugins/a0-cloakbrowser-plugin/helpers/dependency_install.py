@@ -104,7 +104,19 @@ def install_python_dependencies(
         requirement = (
             requirements_path.read_text(encoding="utf-8").strip()
             if requirements_path.is_file()
-            else "cloakbrowser[geoip]>=0.3.28"
+            else (
+                "cloakbrowser[geoip,patchright]>=0.3.28\n"
+                "regex\n"
+                "simpleeval\n"
+                "PyYAML\n"
+                "GitPython\n"
+                "giturlparse\n"
+                "pydantic\n"
+                "watchdog\n"
+                "pytz\n"
+                "python-dotenv\n"
+                "webcolors"
+            )
         )
     cmd = [sys.executable, "-m", "pip", "install"]
     actions = []
@@ -113,19 +125,26 @@ def install_python_dependencies(
         actions.append("cloakbrowser_upgrade")
     else:
         actions.append("cloakbrowser_install")
-    cmd.append(requirement)
+    cmd.extend(requirement.splitlines())
     playwright_installed = importlib.util.find_spec("playwright") is not None
+    patchright_installed = importlib.util.find_spec("patchright") is not None
     if not playwright_installed and repair_playwright:
         cmd.append("playwright")
         actions.append("playwright_install_missing")
     elif playwright_installed:
         actions.append("playwright_preserved")
+    if not patchright_installed:
+        cmd.append("patchright")
+        actions.append("patchright_install_missing")
+    else:
+        actions.append("patchright_preserved")
     result = subprocess.run(cmd, check=False, text=True, capture_output=True)
     return {
         "ok": result.returncode == 0,
         "command": cmd,
         "actions": actions,
         "playwright_installed": playwright_installed,
+        "patchright_installed": patchright_installed,
         "returncode": result.returncode,
         "stdout_tail": (result.stdout or "")[-4000:],
         "stderr_tail": (result.stderr or "")[-4000:],
