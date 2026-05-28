@@ -106,15 +106,16 @@ def main(argv: list[str] | None = None) -> int:
         )
         finished = dt.datetime.now(dt.timezone.utc)
         status = collect_status()
+        readiness = setup_readiness(status, setup_result=result)
         payload = {
-            "ok": bool(result.get("ok")) and setup_readiness(status)["ok"],
+            "ok": bool(result.get("ok")) and readiness["ok"],
             "command": args.command,
             "started": _iso(started),
             "finished": _iso(finished),
             "elapsed_seconds": round(time.monotonic() - monotonic_start, 2),
             "setup": result,
             "status": status,
-            "readiness": setup_readiness(status),
+            "readiness": readiness,
             **_lifecycle_state(),
         }
         _print_result(json.dumps(payload, indent=2, sort_keys=True) if args.json else format_setup(payload))
@@ -130,7 +131,11 @@ def main(argv: list[str] | None = None) -> int:
     return 2
 
 
-def setup_readiness(status: dict[str, Any]) -> dict[str, Any]:
+def setup_readiness(
+    status: dict[str, Any],
+    *,
+    setup_result: dict[str, Any] | None = None,
+) -> dict[str, Any]:
     invariants = status.get("invariants") or {}
     checks = {
         "setup_complete": bool(status.get("setup", {}).get("installed")),
@@ -140,11 +145,20 @@ def setup_readiness(status: dict[str, Any]) -> dict[str, Any]:
         "extension_config_reconciled": bool(invariants.get("extension_config_reconciled")),
         "last_launch_used_cloakbrowser": bool(invariants.get("last_launch_used_cloakbrowser")),
     }
+    restart_scheduled = bool((setup_result or {}).get("restart_scheduled"))
+    if restart_scheduled:
+        checks["last_launch_used_cloakbrowser"] = True
     if status.get("config", {}).get("runtime", {}).get("headed"):
         display = status.get("display", {})
         checks["display_usable"] = bool(display.get("usable_current") or display.get("usable_configured"))
     failed = [name for name, ok in checks.items() if not ok]
-    return {"ok": not failed, "checks": checks, "failed": failed}
+    return {
+        "ok": not failed,
+        "checks": checks,
+        "failed": failed,
+        "restart_scheduled": restart_scheduled,
+        "restart_message": (setup_result or {}).get("restart_message", ""),
+    }
 
 
 def _is_plugin_enabled() -> bool:
@@ -245,10 +259,7 @@ def format_setup(payload: dict[str, Any]) -> str:
     status = payload["status"]
     readiness = payload["readiness"]
     lines = [
-        "CloakBrowser setup",
-        f"Started:  {payload['started']}",
-        f"Finished: {payload['finished']}",
-        f"Elapsed:  {payload['elapsed_seconds']}s",
+        f"CloakBrowser setup complete ({payload['elapsed_seconds']}s)",
         "",
         _format_system_dependencies(setup.get("system", {})),
         _format_python_dependencies(setup.get("python", {})),
@@ -270,7 +281,8 @@ def format_setup(payload: dict[str, Any]) -> str:
 def format_status(status: dict[str, Any]) -> str:
     readiness = setup_readiness(status)
     return "\n".join(
-        [
+        line
+        for line in [
             "CloakBrowser status",
             f"Setup: {_yes_no(status.get('setup', {}).get('installed'))} ({status.get('setup', {}).get('status', 'unknown')})",
             _format_cloakbrowser(status.get("cloakbrowser", {}), status.get("config", {})),
@@ -282,6 +294,7 @@ def format_status(status: dict[str, Any]) -> str:
             "",
             _format_readiness(readiness),
         ]
+        if line is not None
     )
 
 
@@ -356,9 +369,9 @@ def _format_display(setup_display: dict[str, Any], status_display: dict[str, Any
     return f"Display/Xvfb: {'ready' if usable else 'not ready'}; display={display or 'unset'}{suffix}"
 
 
-def _format_effective_location(location: dict[str, Any]) -> str:
+def _format_effective_location(location: dict[str, Any]) -> str | None:
     if not location:
-        return "Effective location: not recorded yet"
+        return None
     timezone = location.get("timezone") or "unset"
     locale = location.get("locale") or "unset"
     exit_ip = location.get("exit_ip") or "unset"
@@ -380,12 +393,14 @@ def _format_extensions(actions: list[dict[str, Any]], status: dict[str, Any]) ->
             }
             for item in items
         ]
+    active_paths = status.get("extensions", {}).get("active_paths") or []
+    if actions and all(not item.get("enabled") for item in actions):
+        return f"Extensions: all managed extensions disabled; active paths synced={len(active_paths)}"
     lines = ["Extensions:"]
     for item in actions:
         installed = "installed" if item.get("installed") else "not installed"
         enabled = "enabled" if item.get("enabled") else "disabled"
         lines.append(f"- {item.get('name') or item.get('key')}: {item.get('action')}; {installed}; {enabled}")
-    active_paths = status.get("extensions", {}).get("active_paths") or []
     lines.append(f"Active extension paths synced: {len(active_paths)}")
     reconciliation = status.get("extension_reconciliation") or {}
     if reconciliation:
@@ -419,7 +434,10 @@ def _format_setup_lifecycle(lifecycle: dict[str, Any]) -> str:
     terminated = len(stopped.get("terminated") or [])
     killed = len(stopped.get("killed") or [])
     if restart.get("needed"):
-        restart_text = "restarted" if restart.get("restarted") else "restart required"
+        if restart.get("scheduled"):
+            restart_text = restart.get("message") or "restart scheduled"
+        else:
+            restart_text = "restarted" if restart.get("restarted") else "restart required"
     else:
         restart_text = "not needed"
     return (
@@ -430,6 +448,9 @@ def _format_setup_lifecycle(lifecycle: dict[str, Any]) -> str:
 
 
 def _format_readiness(readiness: dict[str, Any]) -> str:
+    if readiness.get("restart_scheduled"):
+        message = readiness.get("restart_message") or "Agent Zero restart scheduled after Execute returns."
+        return f"Final readiness: ready after scheduled restart. {message}"
     if readiness["ok"]:
         return "Final readiness: ready. The Browser tool can use CloakBrowser."
     failed = ", ".join(readiness.get("failed") or ["unknown"])
