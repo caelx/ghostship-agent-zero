@@ -15,6 +15,8 @@
   disabled-plugin Browser opt-out, and recover sidecar source-patch metadata.
 - Updated CloakBrowser Execute output so a scheduled Agent Zero restart is
   treated as successful first-run readiness with shorter human output.
+- Updated CloakBrowser setup to install Agent Zero's missing `regex` helper
+  dependency and keep status output free of CloakBrowser's import banner.
 - Fixed CloakBrowser manual setup so live stock Playwright Browser sessions
   force cleanup and a `run_ui` supervisor restart, even when the runtime source
   patch was already present.
